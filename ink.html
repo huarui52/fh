@@ -1,237 +1,225 @@
+<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-  <meta content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=0" name="viewport">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=0">
   <meta content="yes" name="apple-mobile-web-app-capable">
-  <meta content="yes" name="apple-touch-fullscreen">
   <meta content="black" name="apple-mobile-web-app-status-bar-style">
-  <meta content="320" name="MobileOptimized">
-  <meta content="true" name="HandheldFriendly">
-  <meta name="mobile-web-app-capable" content="yes">
-  <title></title>
-<style>
-.container {
-        width: 100px;
-        height: 100px;
-        position: absolute;
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%);
-    }
-
-    .dot {
-        width: 15px;
-        height: 15px;
-        border-radius: 50%;
-        background-color: #000;
-        position: absolute;
-        top: 0;
-        bottom: 0;
-        left: 0;
-        right: 0;
-        margin: auto;
-    }
-
-    .dot-3 {
-        background-color: #f74d75;
-    }
-
-    .dot-2 {
-        background-color: #10beae;
-    }
-
-    .dot-1 {
-        background-color: #ffe386;
-    }
-
-    .dot-3 {
-        background-color: #f74d75;
-        animation: dot-3-move 2s ease infinite;
-    }
-
-    @keyframes dot-3-move {
-        20% {
-            transform: scale(1)
-        }
-
-        45% {
-            transform: translateY(-18px) scale(.45)
-        }
-
-        60% {
-            transform: translateY(-25px) scale(.45)
-        }
-
-        80% {
-            transform: translateY(-25px) scale(.45)
-        }
-
-        100% {
-            transform: translateY(0px) scale(1)
-        }
-    }
-
-    .dot-2 {
-        background-color: #10beae;
-        animation: dot-2-move 2s ease infinite;
-    }
-
-    .dot-1 {
-        background-color: #ffe386;
-        animation: dot-1-move 2s ease infinite;
-    }
-
-    @keyframes dot-2-move {
-        20% {
-            transform: scale(1)
-        }
-
-        45% {
-            transform: translate(-16px, 12px) scale(.45)
-        }
-
-        60% {
-            transform: translate(-20px, 15px) scale(.45)
-        }
-
-        80% {
-            transform: translate(-20px, 15px) scale(.45)
-        }
-
-        100% {
-            transform: translateY(0px) scale(1)
-        }
-    }
-
-    @keyframes dot-1-move {
-        20% {
-            transform: scale(1)
-        }
-
-        45% {
-            transform: translate(16px, 12px) scale(.45)
-        }
-
-        60% {
-            transform: translate(20px, 15px) scale(.45)
-        }
-
-        80% {
-            transform: translate(20px, 15px) scale(.45)
-        }
-
-        100% {
-            transform: translateY(0px) scale(1)
-        }
-    }
-
+  <title>视频播放器</title>
+  <style>
+    /* 加载动画样式 */
     .container {
-        width: 100px;
-        height: 100px;
-        position: absolute;
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%);
-        animation: rotate-move 2s ease-in-out infinite;
+      width: 100px;
+      height: 100px;
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      animation: rotate-move 2s ease-in-out infinite;
     }
-
+    
+    .dot {
+      width: 15px;
+      height: 15px;
+      border-radius: 50%;
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      margin: auto;
+    }
+    
+    .dot-1 { background-color: #ffe386; animation: dot-1-move 2s ease infinite; }
+    .dot-2 { background-color: #10beae; animation: dot-2-move 2s ease infinite; }
+    .dot-3 { background-color: #f74d75; animation: dot-3-move 2s ease infinite; }
+    
+    @keyframes dot-1-move {
+      20% { transform: scale(1) }
+      45% { transform: translate(16px, 12px) scale(.45) }
+      80% { transform: translate(20px, 15px) scale(.45) }
+      100% { transform: translateY(0px) scale(1) }
+    }
+    
+    @keyframes dot-2-move {
+      20% { transform: scale(1) }
+      45% { transform: translate(-16px, 12px) scale(.45) }
+      80% { transform: translate(-20px, 15px) scale(.45) }
+      100% { transform: translateY(0px) scale(1) }
+    }
+    
+    @keyframes dot-3-move {
+      20% { transform: scale(1) }
+      45% { transform: translateY(-18px) scale(.45) }
+      80% { transform: translateY(-25px) scale(.45) }
+      100% { transform: translateY(0px) scale(1) }
+    }
+    
     @keyframes rotate-move {
-        55% {
-            transform: translate(-50%, -50%) rotate(0deg)
-        }
-
-        80% {
-            transform: translate(-50%, -50%) rotate(360deg)
-        }
-
-        100% {
-            transform: translate(-50%, -50%) rotate(360deg)
-        }
+      55% { transform: translate(-50%, -50%) rotate(0deg) }
+      80% { transform: translate(-50%, -50%) rotate(360deg) }
+      100% { transform: translate(-50%, -50%) rotate(360deg) }
     }
     
-    .content {
-        height:100%;
-        width:100%;
-        position: fixed;
-        left: 0;
-        top: 0;
-        border: none;
-        background: #000;
-        -webkit-overflow-scrolling: touch;
-        overflow: auto;
+    /* iframe样式 */
+    .content-iframe {
+      width: 100%;
+      height: 100%;
+      position: fixed;
+      left: 0;
+      top: 0;
+      border: none;
+      background: #000;
     }
     
-    /* 全屏相关样式 */
-    :-webkit-full-screen .content {
-        width: 100% !important;
-        height: 100% !important;
+    /* 全屏样式 */
+    :fullscreen .content-iframe {
+      width: 100% !important;
+      height: 100% !important;
     }
-    
-    :-moz-full-screen .content {
-        width: 100% !important;
-        height: 100% !important;
-    }
-    
-    :-ms-fullscreen .content {
-        width: 100% !important;
-        height: 100% !important;
-    }
-    
-    :fullscreen .content {
-        width: 100% !important;
-        height: 100% !important;
-    }
-</style>
+  </style>
 </head>
 <body>
-
-<div class="container">
+  <!-- 加载动画 -->
+  <div class="container">
     <div class="dot dot-1"></div>
     <div class="dot dot-2"></div>
     <div class="dot dot-3"></div>
-</div>
+  </div>
 
-<script>
-var urlParams = new URLSearchParams(window.location.search);
-var encodedParam = urlParams.get('c');
-var tureurl = atob(encodedParam);
-if (tureurl.includes("http")) {
-    var square = document.querySelector(".container");
-    setTimeout(function() {
-        square.style.display = "none";
-    }, 1500);
-    
-    // 修改iframe创建方式，添加全屏支持属性
-    var iframe = document.createElement('iframe');
-    iframe.className = 'content';
-    iframe.setAttribute('allowfullscreen', '');
-    iframe.setAttribute('webkitallowfullscreen', '');
-    iframe.setAttribute('mozallowfullscreen', '');
-    iframe.setAttribute('allow', 'autoplay; fullscreen');
-    iframe.setAttribute('scrolling', 'no');
-    iframe.src = tureurl;
-    
-    document.body.appendChild(iframe);
-    console.log(tureurl);
-} else {
-    console.log("nourls");
-}
-</script>
+  <script>
+    // 配置参数
+    const CONFIG = {
+      // 允许跳转的域名白名单
+      ALLOWED_DOMAINS: [
+        'your-main-domain.com',  // 替换为你的主域名
+        'wx.qq.com',            // 微信域名
+        'weixin.qq.com',        // 微信域名
+        'open.weixin.qq.com'   // 微信开放平台
+      ],
+      
+      // 需要顶层跳转的授权页面特征
+      AUTH_PAGE_PATTERNS: [
+        'connect.weixin.qq.com',
+        'open.weixin.qq.com/connect',
+        'wx.qq.com/cgi-bin'
+      ]
+    };
 
-<script>
-var firefox = navigator.userAgent.indexOf('Firefox') != -1;
-function MouseWheel(e,doc){
-    e.preventDefault && e.preventDefault(),e.returnValue = false;
-    var up = firefox && e.detail < 0 || e.wheelDelta > 0;
-    doc.body.scrollTop = doc.documentElement.scrollTop += up?-50:50;
-}
-function bindMouseWhee(ifr){
-    try{
-        var doc = ifr.contentWindow.document;
-        firefox?doc.addEventListener('DOMMouseScroll',function(e){MouseWheel(e,doc)},false):(doc.onmousewheel = function(e){MouseWheel(e||ifr.contentWindow.event,doc)});
-    }catch(e){
-        console.log('跨域无法获取iframe加载document'+e);
+    // 工具函数：检查URL是否匹配白名单
+    function isAllowedUrl(url) {
+      try {
+        const domain = new URL(url).hostname.replace('www.', '');
+        return CONFIG.ALLOWED_DOMAINS.some(allowed => 
+          domain === allowed || domain.endsWith('.' + allowed)
+        );
+      } catch {
+        return false;
+      }
     }
-}
-</script>
+
+    // 工具函数：检查是否是授权页面
+    function isAuthPage(url) {
+      return CONFIG.AUTH_PAGE_PATTERNS.some(pattern => url.includes(pattern));
+    }
+
+    // 主逻辑
+    document.addEventListener('DOMContentLoaded', () => {
+      const urlParams = new URLSearchParams(window.location.search);
+      const encodedUrl = urlParams.get('c');
+      const targetUrl = encodedUrl ? atob(encodedUrl) : '';
+      
+      if (!targetUrl.startsWith('http')) {
+        console.error('无效的URL参数');
+        return;
+      }
+
+      // 隐藏加载动画
+      const loader = document.querySelector('.container');
+      setTimeout(() => loader.style.display = 'none', 1500);
+      
+      // 创建iframe
+      const iframe = document.createElement('iframe');
+      iframe.id = 'main-iframe';
+      iframe.className = 'content-iframe';
+      iframe.setAttribute('allowfullscreen', '');
+      iframe.setAttribute('allow', 'autoplay; fullscreen');
+      
+      // 处理导航逻辑
+      const handleNavigation = (url) => {
+        if (!isAllowedUrl(url)) {
+          console.warn('阻止跳转到非白名单域名:', url);
+          return false;
+        }
+        
+        if (isAuthPage(url)) {
+          console.log('检测到授权页面，顶层跳转');
+          window.location.href = url;
+          return false;
+        }
+        return true;
+      };
+
+      // iframe加载完成处理
+      iframe.onload = function() {
+        try {
+          // 尝试隐藏顶部元素
+          const style = document.createElement('style');
+          style.textContent = `
+            header, nav, .header, .navbar, .top-bar, 
+            .logo, .login-btn, [class*="header"] {
+              display: none !important;
+            }
+          `;
+          iframe.contentDocument.head.appendChild(style);
+        } catch (e) {
+          console.log('跨域限制，无法直接修改样式:', e);
+        }
+        
+        // 安全地添加事件监听
+        try {
+          const iframeWindow = iframe.contentWindow;
+          
+          // 劫持window.open
+          iframeWindow.open = function(url, target, features) {
+            if (url && handleNavigation(url)) {
+              return window.open(url, target, features);
+            }
+            return null;
+          };
+          
+          // 劫持location.href
+          const redefineProperty = (obj, prop) => {
+            let value = obj[prop];
+            Object.defineProperty(obj, prop, {
+              get: () => value,
+              set: (newValue) => {
+                if (handleNavigation(newValue)) {
+                  value = newValue;
+                }
+              },
+              configurable: true
+            });
+          };
+          
+          redefineProperty(iframeWindow.location, 'href');
+          redefineProperty(iframeWindow, 'location');
+        } catch (e) {
+          console.log('无法劫持iframe方法:', e);
+        }
+      };
+
+      // 添加到DOM
+      iframe.src = targetUrl;
+      document.body.appendChild(iframe);
+
+      // 全局监听postMessage
+      window.addEventListener('message', (event) => {
+        if (event.data && event.data.type === 'navigation') {
+          handleNavigation(event.data.url);
+        }
+      });
+    });
+  </script>
 </body>
 </html>
