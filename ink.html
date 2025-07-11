@@ -90,14 +90,6 @@
   <script>
     // 配置参数
     const CONFIG = {
-      // 允许跳转的域名白名单
-      ALLOWED_DOMAINS: [
-        'your-main-domain.com',  // 替换为你的主域名
-        'wx.qq.com',            // 微信域名
-        'weixin.qq.com',        // 微信域名
-        'open.weixin.qq.com'   // 微信开放平台
-      ],
-      
       // 需要顶层跳转的授权页面特征
       AUTH_PAGE_PATTERNS: [
         'connect.weixin.qq.com',
@@ -105,18 +97,6 @@
         'wx.qq.com/cgi-bin'
       ]
     };
-
-    // 工具函数：检查URL是否匹配白名单
-    function isAllowedUrl(url) {
-      try {
-        const domain = new URL(url).hostname.replace('www.', '');
-        return CONFIG.ALLOWED_DOMAINS.some(allowed => 
-          domain === allowed || domain.endsWith('.' + allowed)
-        );
-      } catch {
-        return false;
-      }
-    }
 
     // 工具函数：检查是否是授权页面
     function isAuthPage(url) {
@@ -147,11 +127,6 @@
       
       // 处理导航逻辑
       const handleNavigation = (url) => {
-        if (!isAllowedUrl(url)) {
-          console.warn('阻止跳转到非白名单域名:', url);
-          return false;
-        }
-        
         if (isAuthPage(url)) {
           console.log('检测到授权页面，顶层跳转');
           window.location.href = url;
