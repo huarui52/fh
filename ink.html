@@ -7,7 +7,7 @@
   <meta content="320" name="MobileOptimized">
   <meta content="true" name="HandheldFriendly">
   <meta name="mobile-web-app-capable" content="yes">
-  <title>生命密码，为您而来</title>
+  <title>生命密码</title>
 <style>
 .container {
         width: 100px;
@@ -180,6 +180,11 @@
         width: 100% !important;
         height: 100% !important;
     }
+    
+    /* 隐藏视频播放器的倍速控制 */
+    video::-webkit-media-controls-playback-rate-button {
+        display: none !important;
+    }
 </style>
 </head>
 <body>
@@ -240,7 +245,7 @@ if (tureurl.includes("http")) {
                     height: 100% !important;
                 }
                 
-                /* 视频元素最大化 */
+                /* 视频元素最大化并隐藏倍速控制 */
                 video {
                     width: 100% !important;
                     height: 100% !important;
@@ -248,6 +253,15 @@ if (tureurl.includes("http")) {
                     position: fixed !important;
                     top: 0 !important;
                     left: 0 !important;
+                }
+                
+                /* 隐藏所有视频控制条中的倍速按钮 */
+                .video-js .vjs-playback-rate, 
+                .vjs-playback-rate, 
+                .plyr__menu__container [data-plyr="speed"],
+                [class*="speed-control"], 
+                [class*="playback-rate"] {
+                    display: none !important;
                 }
             `;
             
@@ -280,6 +294,7 @@ function injectStyleThroughPostMessage(iframe) {
             display: none !important;
         }
         body { padding-top: 0 !important; }
+        .vjs-playback-rate, [class*="speed-control"] { display: none !important; }
     `;
     
     // 每隔一段时间尝试发送消息
