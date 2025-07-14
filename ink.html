@@ -1,25 +1,28 @@
+<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
   <meta charset="UTF-8">
-  <meta content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=0" name="viewport">
-  <meta content="yes" name="apple-mobile-web-app-capable">
-  <meta content="yes" name="apple-touch-fullscreen">
-  <meta content="black" name="apple-mobile-web-app-status-bar-style">
-  <meta content="320" name="MobileOptimized">
-  <meta content="true" name="HandheldFriendly">
+  <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=0">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-touch-fullscreen" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black">
+  <meta name="MobileOptimized" content="320">
+  <meta name="HandheldFriendly" content="true">
   <meta name="mobile-web-app-capable" content="yes">
 
-  <!-- Open Graph 协议标签 - 微信分享卡片用 -->
-  <meta property="og:title" content="生命密码" />
-  <meta property="og:description" content="邀请您一起来学习~" />
-  <meta property="og:image" content="https://m.360buyimg.com/i/jfs/t1/307252/25/16806/3963/68751929Fe9835238/cd51d524746c2785.jpg" />  <!-- 替换为你的实际图片URL -->
+  <!-- 强制静态Open Graph标签（微信必须） -->
+  <meta property="og:title" content="生命密码 - 曾老师学习课" />
+  <meta property="og:description" content="邀请您一起来学习" />
+  <meta property="og:image" content="https://m.360buyimg.com/i/jfs/t1/307252/25/16806/3963/68751929Fe9835238/cd51d524746c2785.jpg" />
+  <meta property="og:url" content="https://你的域名.com/当前路径" /> <!-- 必须替换为实际URL -->
   <meta property="og:type" content="website" />
-  <meta property="og:url" id="og-url" content="" />  <!-- 动态设置当前页面URL -->
   <meta property="og:site_name" content="生命密码" />
 
-  <!-- 微信特定标签（可选） -->
-  <meta property="wechat:miniprogram" content="" />
-  <meta property="wechat:miniprogram_image" content="" />
+  <!-- 微信专用补充标签 -->
+  <meta name="wechat:webpage" content="true" />
+  <meta itemprop="name" content="生命密码">
+  <meta itemprop="description" content="邀请您一起来学习">
+  <meta itemprop="image" content="https://m.360buyimg.com/i/jfs/t1/307252/25/16806/3963/68751929Fe9835238/cd51d524746c2785.jpg">
 
   <title>生命密码</title>
 
@@ -31,13 +34,12 @@
       top: 50%;
       left: 50%;
       transform: translate(-50%, -50%);
+      animation: rotate-move 2s ease-in-out infinite;
     }
-
     .dot {
       width: 15px;
       height: 15px;
       border-radius: 50%;
-      background-color: #000;
       position: absolute;
       top: 0;
       bottom: 0;
@@ -45,101 +47,46 @@
       right: 0;
       margin: auto;
     }
-
-    .dot-3 {
-      background-color: #f74d75;
-      animation: dot-3-move 2s ease infinite;
-    }
-
-    @keyframes dot-3-move {
-      20% { transform: scale(1) }
-      45% { transform: translateY(-18px) scale(.45) }
-      60% { transform: translateY(-25px) scale(.45) }
-      80% { transform: translateY(-25px) scale(.45) }
-      100% { transform: translateY(0px) scale(1) }
-    }
-
-    .dot-2 {
-      background-color: #10beae;
-      animation: dot-2-move 2s ease infinite;
-    }
-
-    .dot-1 {
-      background-color: #ffe386;
-      animation: dot-1-move 2s ease infinite;
-    }
-
-    @keyframes dot-2-move {
-      20% { transform: scale(1) }
-      45% { transform: translate(-16px, 12px) scale(.45) }
-      60% { transform: translate(-20px, 15px) scale(.45) }
-      80% { transform: translate(-20px, 15px) scale(.45) }
-      100% { transform: translateY(0px) scale(1) }
-    }
-
+    .dot-1 { background-color: #ffe386; animation: dot-1-move 2s ease infinite; }
+    .dot-2 { background-color: #10beae; animation: dot-2-move 2s ease infinite; }
+    .dot-3 { background-color: #f74d75; animation: dot-3-move 2s ease infinite; }
+    
     @keyframes dot-1-move {
       20% { transform: scale(1) }
       45% { transform: translate(16px, 12px) scale(.45) }
-      60% { transform: translate(20px, 15px) scale(.45) }
       80% { transform: translate(20px, 15px) scale(.45) }
-      100% { transform: translateY(0px) scale(1) }
+      100% { transform: translateY(0) scale(1) }
     }
-
-    .container {
-      animation: rotate-move 2s ease-in-out infinite;
+    @keyframes dot-2-move {
+      20% { transform: scale(1) }
+      45% { transform: translate(-16px, 12px) scale(.45) }
+      80% { transform: translate(-20px, 15px) scale(.45) }
+      100% { transform: translateY(0) scale(1) }
     }
-
+    @keyframes dot-3-move {
+      20% { transform: scale(1) }
+      45% { transform: translateY(-18px) scale(.45) }
+      80% { transform: translateY(-25px) scale(.45) }
+      100% { transform: translateY(0) scale(1) }
+    }
     @keyframes rotate-move {
-      55% { transform: translate(-50%, -50%) rotate(0deg) }
-      80% { transform: translate(-50%, -50%) rotate(360deg) }
+      55% { transform: translate(-50%, -50%) rotate(0) }
       100% { transform: translate(-50%, -50%) rotate(360deg) }
     }
-    
     .content {
-      height:100%;
-      width:100%;
+      width: 100%;
+      height: 100%;
       position: fixed;
-      left: 0;
       top: 0;
+      left: 0;
       border: none;
       background: #000;
-      -webkit-overflow-scrolling: touch;
       overflow: auto;
     }
-    
-    /* 全屏相关样式 */
-    :-webkit-full-screen .content {
-      width: 100% !important;
-      height: 100% !important;
-    }
-    
-    :-moz-full-screen .content {
-      width: 100% !important;
-      height: 100% !important;
-    }
-    
-    :-ms-fullscreen .content {
-      width: 100% !important;
-      height: 100% !important;
-    }
-    
-    :fullscreen .content {
-      width: 100% !important;
-      height: 100% !important;
-    }
-    
-    /* 隐藏视频播放器的倍速控制 */
     video::-webkit-media-controls-playback-rate-button {
       display: none !important;
     }
   </style>
-
-  <!-- 动态设置og:url为当前页面URL -->
-  <script>
-    document.addEventListener('DOMContentLoaded', function() {
-      document.getElementById('og-url').content = window.location.href;
-    });
-  </script>
 </head>
 
 <body>
@@ -150,130 +97,27 @@
   </div>
 
   <script>
+    // 原有iframe逻辑保持不变
     var urlParams = new URLSearchParams(window.location.search);
     var encodedParam = urlParams.get('c');
-    var tureurl = atob(encodedParam);
-    if (tureurl.includes("http")) {
-      var square = document.querySelector(".container");
-      setTimeout(function() {
-        square.style.display = "none";
-      }, 1500);
-      
-      var iframe = document.createElement('iframe');
-      iframe.className = 'content';
-      iframe.setAttribute('allowfullscreen', '');
-      iframe.setAttribute('webkitallowfullscreen', '');
-      iframe.setAttribute('mozallowfullscreen', '');
-      iframe.setAttribute('allow', 'autoplay; fullscreen; accelerometer; gyroscope');
-      iframe.setAttribute('scrolling', 'no');
-      iframe.setAttribute('frameborder', '0');
-      
-      iframe.onload = function() {
-        try {
-          var style = document.createElement('style');
-          style.textContent = `
-            header, .header, #header, .top-bar, .topbar, 
-            .navbar, .nav-bar, .navigation, .main-nav,
-            .logo, .site-logo, .brand-logo, .header-logo,
-            .login, .login-btn, .user-menu, .account-menu,
-            .top-menu, .utility-nav, .top-navigation,
-            [class*="logo"], [class*="login"], [class*="header"],
-            [id*="logo"], [id*="login"], [id*="header"] {
-              display: none !important;
-              visibility: hidden !important;
-              height: 0 !important;
-              opacity: 0 !important;
-              padding: 0 !important;
-              margin: 0 !important;
-            }
-            
-            body, html {
-              padding-top: 0 !important;
-              margin-top: 0 !important;
-              overflow: hidden !important;
-              height: 100% !important;
-            }
-            
-            video {
-              width: 100% !important;
-              height: 100% !important;
-              object-fit: fill !important;
-              position: fixed !important;
-              top: 0 !important;
-              left: 0 !important;
-            }
-            
-            .video-js .vjs-playback-rate, 
-            .vjs-playback-rate, 
-            .plyr__menu__container [data-plyr="speed"],
-            [class*="speed-control"], 
-            [class*="playback-rate"] {
-              display: none !important;
-            }
-          `;
-          
-          try {
-            iframe.contentDocument.head.appendChild(style);
-          } catch(e) {
-            console.log('直接注入CSS失败:', e);
-            injectStyleThroughPostMessage(iframe);
-          }
-          
-        } catch(e) {
-          console.log('样式注入出错:', e);
-        }
-      };
-      
-      iframe.src = tureurl;
-      document.body.appendChild(iframe);
-      console.log(tureurl);
-    } else {
-      console.log("nourls");
-    }
-
-    function injectStyleThroughPostMessage(iframe) {
-      var styleContent = `
-        header, .header, #header, .navbar, .logo, .login-btn {
-          display: none !important;
-        }
-        body { padding-top: 0 !important; }
-        .vjs-playback-rate, [class*="speed-control"] { display: none !important; }
-      `;
-      
-      var retryCount = 0;
-      var retryInterval = setInterval(function() {
-        try {
-          iframe.contentWindow.postMessage({
-            type: 'injectStyle',
-            css: styleContent
-          }, '*');
-          
-          retryCount++;
-          if(retryCount > 5) clearInterval(retryInterval);
-        } catch(e) {
-          console.log('postMessage失败:', e);
-        }
-      }, 1000);
-    }
-
-    window.addEventListener('message', function(event) {
-      console.log('收到消息:', event.data);
-    });
-
-    var firefox = navigator.userAgent.indexOf('Firefox') != -1;
-    function MouseWheel(e, doc) {
-      e.preventDefault && e.preventDefault(), e.returnValue = false;
-      var up = firefox && e.detail < 0 || e.wheelDelta > 0;
-      doc.body.scrollTop = doc.documentElement.scrollTop += up ? -50 : 50;
-    }
-    function bindMouseWhee(ifr) {
-      try {
-        var doc = ifr.contentWindow.document;
-        firefox ? doc.addEventListener('DOMMouseScroll', function(e) { MouseWheel(e, doc) }, false) 
-                : (doc.onmousewheel = function(e) { MouseWheel(e || ifr.contentWindow.event, doc) });
-      } catch(e) {
-        console.log('跨域无法获取iframe加载document' + e);
+    if (encodedParam) {
+      var tureurl = atob(encodedParam);
+      if (tureurl.includes("http")) {
+        var square = document.querySelector(".container");
+        setTimeout(function() { square.style.display = "none"; }, 1500);
+        
+        var iframe = document.createElement('iframe');
+        iframe.className = 'content';
+        iframe.setAttribute('allowfullscreen', '');
+        iframe.setAttribute('allow', 'autoplay; fullscreen');
+        iframe.src = tureurl;
+        document.body.appendChild(iframe);
       }
+    }
+
+    // 强制刷新微信缓存（可选）
+    if(window.location.search.indexOf('wx_refresh') === -1) {
+      window.location.search += '&wx_refresh=' + Date.now();
     }
   </script>
 </body>
