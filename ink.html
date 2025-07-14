@@ -14,16 +14,13 @@
   <meta property="og:description" content="邀请您来学习" />
   <meta property="og:image" content="https://m.360buyimg.com/i/jfs/t1/307252/25/16806/3963/68751929Fe9835238/cd51d524746c2785.jpg" />
   <meta property="og:type" content="website" />
-  <meta property="og:url" content="" />  <!-- 动态设置当前页面URL -->
+  <meta property="og:url" content="" />
   <meta property="og:site_name" content="生命密码" />
 
-  <!-- 微信特定标签（可选） -->
-  <meta property="wechat:miniprogram" content="" />
-  <meta property="wechat:miniprogram_image" content="" />
-
-  <title>曾老师学习课，邀请您一起来学习</title>
+  <title>生命密码 曾老师学习课</title>
 
   <style>
+    /* 加载动画样式（保持不变） */
     .container {
       width: 100px;
       height: 100px;
@@ -32,72 +29,48 @@
       left: 50%;
       transform: translate(-50%, -50%);
     }
-
     .dot {
       width: 15px;
       height: 15px;
       border-radius: 50%;
       background-color: #000;
       position: absolute;
-      top: 0;
-      bottom: 0;
-      left: 0;
-      right: 0;
       margin: auto;
+      top: 0; bottom: 0; left: 0; right: 0;
     }
-
-    .dot-3 {
-      background-color: #f74d75;
-      animation: dot-3-move 2s ease infinite;
-    }
-
+    .dot-3 { background-color: #f74d75; animation: dot-3-move 2s ease infinite; }
+    .dot-2 { background-color: #10beae; animation: dot-2-move 2s ease infinite; }
+    .dot-1 { background-color: #ffe386; animation: dot-1-move 2s ease infinite; }
     @keyframes dot-3-move {
       20% { transform: scale(1) }
       45% { transform: translateY(-18px) scale(.45) }
       60% { transform: translateY(-25px) scale(.45) }
       80% { transform: translateY(-25px) scale(.45) }
-      100% { transform: translateY(0px) scale(1) }
+      100% { transform: translateY(0) scale(1) }
     }
-
-    .dot-2 {
-      background-color: #10beae;
-      animation: dot-2-move 2s ease infinite;
-    }
-
-    .dot-1 {
-      background-color: #ffe386;
-      animation: dot-1-move 2s ease infinite;
-    }
-
     @keyframes dot-2-move {
       20% { transform: scale(1) }
       45% { transform: translate(-16px, 12px) scale(.45) }
       60% { transform: translate(-20px, 15px) scale(.45) }
       80% { transform: translate(-20px, 15px) scale(.45) }
-      100% { transform: translateY(0px) scale(1) }
+      100% { transform: translateY(0) scale(1) }
     }
-
     @keyframes dot-1-move {
       20% { transform: scale(1) }
       45% { transform: translate(16px, 12px) scale(.45) }
       60% { transform: translate(20px, 15px) scale(.45) }
       80% { transform: translate(20px, 15px) scale(.45) }
-      100% { transform: translateY(0px) scale(1) }
+      100% { transform: translateY(0) scale(1) }
     }
-
-    .container {
-      animation: rotate-move 2s ease-in-out infinite;
-    }
-
+    .container { animation: rotate-move 2s ease-in-out infinite; }
     @keyframes rotate-move {
       55% { transform: translate(-50%, -50%) rotate(0deg) }
       80% { transform: translate(-50%, -50%) rotate(360deg) }
       100% { transform: translate(-50%, -50%) rotate(360deg) }
     }
-    
     .content {
-      height:100%;
-      width:100%;
+      height: 100%;
+      width: 100%;
       position: fixed;
       left: 0;
       top: 0;
@@ -106,38 +79,20 @@
       -webkit-overflow-scrolling: touch;
       overflow: auto;
     }
-    
-    /* 全屏相关样式 */
-    :-webkit-full-screen .content {
+    /* 全屏样式 */
+    :-webkit-full-screen .content, :-moz-full-screen .content,
+    :-ms-fullscreen .content, :fullscreen .content {
       width: 100% !important;
       height: 100% !important;
     }
-    
-    :-moz-full-screen .content {
-      width: 100% !important;
-      height: 100% !important;
-    }
-    
-    :-ms-fullscreen .content {
-      width: 100% !important;
-      height: 100% !important;
-    }
-    
-    :fullscreen .content {
-      width: 100% !important;
-      height: 100% !important;
-    }
-    
-    /* 隐藏视频播放器的倍速控制 */
-    video::-webkit-media-controls-playback-rate-button {
-      display: none !important;
-    }
+    /* 隐藏视频倍速控制 */
+    video::-webkit-media-controls-playback-rate-button { display: none !important; }
   </style>
 
-  <!-- 动态设置og:url为当前页面URL -->
   <script>
-    document.addEventListener('DOMContentLoaded', function() {
-      document.getElementById('og-url').content = window.location.href;
+    // 动态设置og:url（微信爬虫可能不执行JS，建议后端渲染时直接写死）
+    document.addEventListener('DOMContentLoaded', () => {
+      document.querySelector('meta[property="og:url"]').content = window.location.href;
     });
   </script>
 </head>
@@ -150,129 +105,148 @@
   </div>
 
   <script>
-    var urlParams = new URLSearchParams(window.location.search);
-    var encodedParam = urlParams.get('c');
-    var tureurl = atob(encodedParam);
-    if (tureurl.includes("http")) {
-      var square = document.querySelector(".container");
-      setTimeout(function() {
-        square.style.display = "none";
-      }, 1500);
-      
-      var iframe = document.createElement('iframe');
-      iframe.className = 'content';
-      iframe.setAttribute('allowfullscreen', '');
-      iframe.setAttribute('webkitallowfullscreen', '');
-      iframe.setAttribute('mozallowfullscreen', '');
-      iframe.setAttribute('allow', 'autoplay; fullscreen; accelerometer; gyroscope');
-      iframe.setAttribute('scrolling', 'no');
-      iframe.setAttribute('frameborder', '0');
-      
-      iframe.onload = function() {
-        try {
-          var style = document.createElement('style');
-          style.textContent = `
-            header, .header, #header, .top-bar, .topbar, 
-            .navbar, .nav-bar, .navigation, .main-nav,
-            .logo, .site-logo, .brand-logo, .header-logo,
-            .login, .login-btn, .user-menu, .account-menu,
-            .top-menu, .utility-nav, .top-navigation,
-            [class*="logo"], [class*="login"], [class*="header"],
-            [id*="logo"], [id*="login"], [id*="header"] {
-              display: none !important;
-              visibility: hidden !important;
-              height: 0 !important;
-              opacity: 0 !important;
-              padding: 0 !important;
-              margin: 0 !important;
-            }
-            
-            body, html {
-              padding-top: 0 !important;
-              margin-top: 0 !important;
-              overflow: hidden !important;
-              height: 100% !important;
-            }
-            
-            video {
-              width: 100% !important;
-              height: 100% !important;
-              object-fit: fill !important;
-              position: fixed !important;
-              top: 0 !important;
-              left: 0 !important;
-            }
-            
-            .video-js .vjs-playback-rate, 
-            .vjs-playback-rate, 
-            .plyr__menu__container [data-plyr="speed"],
-            [class*="speed-control"], 
-            [class*="playback-rate"] {
-              display: none !important;
-            }
-          `;
-          
+    // 解码URL参数并处理iframe
+    const urlParams = new URLSearchParams(window.location.search);
+    const encodedParam = urlParams.get('c');
+    let tureurl = encodedParam ? atob(encodedParam) : '';
+
+    // 检测是否为微信环境
+    const isWechat = /MicroMessenger/i.test(navigator.userAgent);
+
+    // 处理跳转和授权的核心函数
+    function handleNavigation(url) {
+      // 1. 检测是否为微信授权链接（必须在顶层窗口打开）
+      if (url.includes('open.weixin.qq.com/connect/oauth2')) {
+        window.top.location.href = url;
+        return true; // 已拦截并跳转
+      }
+
+      // 2. 检测跨域跳转（非当前域名的链接）
+      const currentDomain = window.location.hostname;
+      try {
+        const targetUrl = new URL(url);
+        if (targetUrl.hostname !== currentDomain) {
+          window.top.location.href = url; // 跨域跳转走顶层窗口
+          return true;
+        }
+      } catch (e) {
+        console.log('URL解析错误:', e);
+      }
+
+      return false; // 非跨域/非授权链接，允许在iframe内加载
+    }
+
+    if (tureurl && tureurl.includes('http')) {
+      // 先判断初始URL是否需要跳转
+      if (handleNavigation(tureurl)) {
+        document.querySelector('.container').style.display = 'none'; // 隐藏加载动画
+      } else {
+        // 初始URL无需跳转，正常加载iframe
+        const square = document.querySelector('.container');
+        setTimeout(() => { square.style.display = 'none'; }, 1500);
+
+        const iframe = document.createElement('iframe');
+        iframe.className = 'content';
+        iframe.setAttribute('allowfullscreen', '');
+        iframe.setAttribute('webkitallowfullscreen', '');
+        iframe.setAttribute('mozallowfullscreen', '');
+        iframe.setAttribute('allow', 'autoplay; fullscreen; accelerometer; gyroscope');
+        iframe.setAttribute('scrolling', 'no');
+        iframe.setAttribute('frameborder', '0');
+
+        // 监听iframe加载状态，拦截跳转
+        iframe.onload = function() {
           try {
-            iframe.contentDocument.head.appendChild(style);
-          } catch(e) {
-            console.log('直接注入CSS失败:', e);
-            injectStyleThroughPostMessage(iframe);
+            // 注入CSS（排除授权页面）
+            const currentIframeUrl = iframe.contentWindow.location.href;
+            if (!currentIframeUrl.includes('open.weixin.qq.com/connect/oauth2')) {
+              const style = document.createElement('style');
+              style.textContent = `
+                header, .header, #header, .top-bar, .topbar, 
+                .navbar, .nav-bar, .navigation, .main-nav,
+                .logo, .site-logo, .brand-logo, .header-logo,
+                .login, .login-btn, .user-menu, .account-menu,
+                .top-menu, .utility-nav, .top-navigation,
+                [class*="logo"], [class*="login"], [class*="header"],
+                [id*="logo"], [id*="login"], [id*="header"] {
+                  display: none !important;
+                  visibility: hidden !important;
+                  height: 0 !important;
+                  opacity: 0 !important;
+                  padding: 0 !important;
+                  margin: 0 !important;
+                }
+                body, html {
+                  padding-top: 0 !important;
+                  margin-top: 0 !important;
+                  overflow: hidden !important;
+                  height: 100% !important;
+                }
+                video {
+                  width: 100% !important;
+                  height: 100% !important;
+                  object-fit: fill !important;
+                  position: fixed !important;
+                  top: 0 !important;
+                  left: 0 !important;
+                }
+                .video-js .vjs-playback-rate, 
+                .vjs-playback-rate, 
+                .plyr__menu__container [data-plyr="speed"],
+                [class*="speed-control"], 
+                [class*="playback-rate"] {
+                  display: none !important;
+                }
+              `;
+              iframe.contentDocument.head.appendChild(style);
+            }
+          } catch (e) {
+            console.log('CSS注入失败:', e);
           }
-          
-        } catch(e) {
-          console.log('样式注入出错:', e);
-        }
-      };
-      
-      iframe.src = tureurl;
-      document.body.appendChild(iframe);
-      console.log(tureurl);
+        };
+
+        // 监听iframe内部的URL变化（通过定时器轮询，跨域时无法直接监听）
+        setInterval(() => {
+       监听）
+        setInterval(() => {
+          try {
+            const currentUrl = iframe.contentWindow.location.href;
+            if (currentUrl && currentUrl !== tureurl) {
+              // 检测到URL变化，判断是否需要跳转
+              if (handleNavigation(currentUrl)) {
+                tureurl = currentUrl; // 更新URL避免重复跳转
+              }
+            }
+          } catch (e) {
+            // 跨域时无法获取URL，忽略错误
+          }
+        }, 500);
+
+        iframe.src = tureurl;
+        document.body.appendChild(iframe);
+      }
     } else {
-      console.log("nourls");
+      console.log("无效的URL参数");
     }
 
-    function injectStyleThroughPostMessage(iframe) {
-      var styleContent = `
-        header, .header, #header, .navbar, .logo, .login-btn {
-          display: none !important;
-        }
-        body { padding-top: 0 !important; }
-        .vjs-playback-rate, [class*="speed-control"] { display: none !important; }
-      `;
-      
-      var retryCount = 0;
-      var retryInterval = setInterval(function() {
-        try {
-          iframe.contentWindow.postMessage({
-            type: 'injectStyle',
-            css: styleContent
-          }, '*');
-          
-          retryCount++;
-          if(retryCount > 5) clearInterval(retryInterval);
-        } catch(e) {
-          console.log('postMessage失败:', e);
-        }
-      }, 1000);
-    }
-
-    window.addEventListener('message', function(event) {
-      console.log('收到消息:', event.data);
-    });
-
-    var firefox = navigator.userAgent.indexOf('Firefox') != -1;
+    // 鼠标滚轮控制（保留原有逻辑）
+    const firefox = navigator.userAgent.indexOf('Firefox') !== -1;
     function MouseWheel(e, doc) {
-      e.preventDefault && e.preventDefault(), e.returnValue = false;
-      var up = firefox && e.detail < 0 || e.wheelDelta > 0;
+      e.preventDefault && e.preventDefault();
+      e.returnValue = false;
+      const up = firefox && e.detail < 0 || e.wheelDelta > 0;
       doc.body.scrollTop = doc.documentElement.scrollTop += up ? -50 : 50;
     }
     function bindMouseWhee(ifr) {
       try {
-        var doc = ifr.contentWindow.document;
-        firefox ? doc.addEventListener('DOMMouseScroll', function(e) { MouseWheel(e, doc) }, false) 
-                : (doc.onmousewheel = function(e) { MouseWheel(e || ifr.contentWindow.event, doc) });
-      } catch(e) {
-        console.log('跨域无法获取iframe加载document' + e);
+        const doc = ifr.contentWindow.document;
+        if (firefox) {
+          doc.addEventListener('DOMMouseScroll', (e) => MouseWheel(e, doc), false);
+        } else {
+          doc.onmousewheel = (e) => MouseWheel(e || ifr.contentWindow.event, doc);
+        }
+      } catch (e) {
+        console.log('跨域无法控制滚轮:', e);
       }
     }
   </script>
