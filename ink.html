@@ -1,149 +1,343 @@
-<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
-  <title>百草珍酿</title>
-  <style>
-    /* 初始加载动画 */
-    .loader {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background: #000;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      z-index: 1000;
-    }
-    .dot {
-      width: 20px;
-      height: 20px;
-      border-radius: 50%;
-      margin: 0 10px;
-      animation: bounce 1.5s infinite ease-in-out;
-    }
-    .dot-1 { background: #f74d75; animation-delay: 0s; }
-    .dot-2 { background: #10beae; animation-delay: 0.2s; }
-    .dot-3 { background: #ffe386; animation-delay: 0.4s; }
-    @keyframes bounce {
-      0%, 100% { transform: translateY(0); }
-      50% { transform: translateY(-25px); }
-    }
+  <meta content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=0" name="viewport">
+  <meta content="yes" name="apple-mobile-web-app-capable">
+  <meta content="yes" name="apple-touch-fullscreen">
+  <meta content="black" name="apple-mobile-web-app-status-bar-style">
+  <meta content="320" name="MobileOptimized">
+  <meta content="true" name="HandheldFriendly">
+  <meta name="mobile-web-app-capable" content="yes">
 
-    /* 全屏按钮样式 */
-    #fullscreen-btn {
-      position: fixed;
+  <!-- Open Graph 协议标签 - 微信分享卡片用 -->
+  <meta property="og:title" content="生命密码" />
+  <meta property="og:description" content="邀请您一起来学习" />
+  <meta property="og:image" content="https://m.360buyimg.com/i/jfs/t1/307252/25/16806/3963/68751929Fe9835238/cd51d524746c2785.jpg" />
+  <meta property="og:type" content="website" />
+  <meta property="og:url" id="og-url" content="" />
+  <meta property="og:site_name" content="生命密码" />
+
+  <!-- 微信特定标签（可选） -->
+  <meta property="wechat:miniprogram" content="" />
+  <meta property="wechat:miniprogram_image" content="" />
+
+  <title>学习课堂</title>
+
+  <style>
+    .container {
+      width: 100px;
+      height: 100px;
+      position: absolute;
       top: 50%;
       left: 50%;
       transform: translate(-50%, -50%);
-      padding: 20px 40px;
-      font-size: 24px;
-      background: linear-gradient(135deg, #007BFF, #00BFFF);
-      color: white;
-      border: none;
-      border-radius: 50px;
-      cursor: pointer;
-      box-shadow: 0 10px 25px rgba(0, 123, 255, 0.5);
-      z-index: 1001;
-      transition: all 0.3s;
-    }
-    #fullscreen-btn:hover {
-      background: linear-gradient(135deg, #0069D9, #00A6FF);
-      box-shadow: 0 15px 30px rgba(0, 123, 255, 0.7);
     }
 
-    /* iframe样式 */
-    #meeting-iframe {
-      width: 100%;
-      height: 100%;
-      border: none;
-      display: none; /* 初始隐藏 */
-    }
-
-    /* 强制横屏提示 */
-    #landscape-warning {
-      display: none;
-      position: fixed;
+    .dot {
+      width: 15px;
+      height: 15px;
+      border-radius: 50%;
+      background-color: #000;
+      position: absolute;
       top: 0;
+      bottom: 0;
       left: 0;
-      width: 100%;
-      height: 100%;
-      background: rgba(0, 0, 0, 0.9);
-      color: white;
-      justify-content: center;
-      align-items: center;
-      flex-direction: column;
-      z-index: 9999;
+      right: 0;
+      margin: auto;
     }
-    #landscape-warning p {
-      font-size: 24px;
-      margin-bottom: 20px;
-      text-align: center;
+
+    .dot-3 {
+      background-color: #f74d75;
+      animation: dot-3-move 2s ease infinite;
+    }
+
+    @keyframes dot-3-move {
+      20% { transform: scale(1) }
+      45% { transform: translateY(-18px) scale(.45) }
+      60% { transform: translateY(-25px) scale(.45) }
+      80% { transform: translateY(-25px) scale(.45) }
+      100% { transform: translateY(0px) scale(1) }
+    }
+
+    .dot-2 {
+      background-color: #10beae;
+      animation: dot-2-move 2s ease infinite;
+    }
+
+    .dot-1 {
+      background-color: #ffe386;
+      animation: dot-1-move 2s ease infinite;
+    }
+
+    @keyframes dot-2-move {
+      20% { transform: scale(1) }
+      45% { transform: translate(-16px, 12px) scale(.45) }
+      60% { transform: translate(-20px, 15px) scale(.45) }
+      80% { transform: translate(-20px, 15px) scale(.45) }
+      100% { transform: translateY(0px) scale(1) }
+    }
+
+    @keyframes dot-1-move {
+      20% { transform: scale(1) }
+      45% { transform: translate(16px, 12px) scale(.45) }
+      60% { transform: translate(20px, 15px) scale(.45) }
+      80% { transform: translate(20px, 15px) scale(.45) }
+      100% { transform: translateY(0px) scale(1) }
+    }
+
+    .container {
+      animation: rotate-move 2s ease-in-out infinite;
+    }
+
+    @keyframes rotate-move {
+      55% { transform: translate(-50%, -50%) rotate(0deg) }
+      80% { transform: translate(-50%, -50%) rotate(360deg) }
+      100% { transform: translate(-50%, -50%) rotate(360deg) }
+    }
+    
+    .content {
+      height:100%;
+      width:100%;
+      position: fixed;
+      left: 0;
+      top: 0;
+      border: none;
+      background: #000;
+      -webkit-overflow-scrolling: touch;
+      overflow: auto;
+    }
+    
+    /* 全屏相关样式 */
+    :-webkit-full-screen .content {
+      width: 100% !important;
+      height: 100% !important;
+    }
+    
+    :-moz-full-screen .content {
+      width: 100% !important;
+      height: 100% !important;
+    }
+    
+    :-ms-fullscreen .content {
+      width: 100% !important;
+      height: 100% !important;
+    }
+    
+    :fullscreen .content {
+      width: 100% !important;
+      height: 100% !important;
+    }
+    
+    /* 隐藏视频播放器的倍速控制 */
+    video::-webkit-media-controls-playback-rate-button {
+      display: none !important;
     }
   </style>
+
+  <!-- 动态设置og:url为当前页面URL -->
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      document.getElementById('og-url').content = window.location.href;
+    });
+  </script>
 </head>
+
 <body>
-  <!-- 加载动画 -->
-  <div class="loader">
+  <div class="container">
     <div class="dot dot-1"></div>
     <div class="dot dot-2"></div>
     <div class="dot dot-3"></div>
   </div>
 
-  <!-- 全屏按钮 -->
-  <button id="fullscreen-btn">▶️ 全屏播放会议</button>
-
-  <!-- iframe容器 -->
-  <iframe id="meeting-iframe" allowfullscreen></iframe>
-
-  <!-- 横屏提示 -->
-  <div id="landscape-warning">
-    <p>请将手机横屏以获得最佳体验</p>
-    <p>📱 ➡️ 🔄</p>
-  </div>
-
   <script>
-    // 1. 隐藏加载动画，显示全屏按钮
-    setTimeout(() => {
-      document.querySelector('.loader').style.display = 'none';
-      document.getElementById('fullscreen-btn').style.display = 'block';
-    }, 2000);
-
-    // 2. 点击全屏按钮后的操作
-    document.getElementById('fullscreen-btn').addEventListener('click', function() {
-      // 隐藏按钮
-      this.style.display = 'none';
+    var urlParams = new URLSearchParams(window.location.search);
+    var encodedParam = urlParams.get('c');
+    var tureurl = atob(encodedParam);
+    if (tureurl.includes("http")) {
+      var square = document.querySelector(".container");
+      setTimeout(function() {
+        square.style.display = "none";
+      }, 1500);
       
-      // 显示iframe并加载腾讯会议
-      const iframe = document.getElementById('meeting-iframe');
-      iframe.src = "https://meeting.tencent.com/crm/N147dxBM7c";
-      iframe.style.display = 'block';
+      var iframe = document.createElement('iframe');
+      iframe.className = 'content';
+      iframe.setAttribute('allowfullscreen', '');
+      iframe.setAttribute('webkitallowfullscreen', '');
+      iframe.setAttribute('mozallowfullscreen', '');
+      iframe.setAttribute('allow', 'autoplay; fullscreen; accelerometer; gyroscope');
+      iframe.setAttribute('scrolling', 'no');
+      iframe.setAttribute('frameborder', '0');
+      
+      // 更强大的样式注入方案
+      iframe.onload = function() {
+        try {
+          // 主样式注入
+          var style = document.createElement('style');
+          style.textContent = `
+            /* 隐藏所有非视频元素 */
+            body *:not(video):not(iframe):not(object):not(embed) {
+              display: none !important;
+              visibility: hidden !important;
+              height: 0 !important;
+              width: 0 !important;
+              opacity: 0 !important;
+              padding: 0 !important;
+              margin: 0 !important;
+              position: absolute !important;
+              clip: rect(0 0 0 0) !important;
+              overflow: hidden !important;
+            }
+            
+            /* 确保视频全屏 */
+            video, iframe, object, embed {
+              position: fixed !important;
+              top: 0 !important;
+              left: 0 !important;
+              width: 100% !important;
+              height: 100% !important;
+              z-index: 999999 !important;
+            }
+            
+            /* 重置body和html */
+            body, html {
+              padding: 0 !important;
+              margin: 0 !important;
+              overflow: hidden !important;
+              background: black !important;
+              height: 100% !important;
+              width: 100% !important;
+            }
+            
+            /* 隐藏播放器控制条中的倍速按钮 */
+            .vjs-playback-rate, 
+            [class*="speed-control"], 
+            [class*="rate-control"],
+            .plyr__menu__container [data-plyr="speed"],
+            [data-testid="player-controls"] [aria-label*="speed"],
+            [aria-label*="playback rate"] {
+              display: none !important;
+            }
+            
+            /* 隐藏广告和叠加层 */
+            .ad-container, .ad, [class*="ad-"], 
+            .overlay, .popup, .modal,
+            [id*="ad"], [id*="Ad"] {
+              display: none !important;
+            }
+          `;
+          
+          try {
+            // 尝试直接注入
+            iframe.contentDocument.head.appendChild(style);
+          } catch(e) {
+            console.log('直接注入CSS失败:', e);
+            // 备用方案：通过JavaScript查找并隐藏元素
+            try {
+              var script = document.createElement('script');
+              script.textContent = `
+                // 隐藏所有非视频元素
+                function hideNonVideoElements() {
+                  var allElements = document.querySelectorAll('body *:not(video):not(iframe):not(object):not(embed)');
+                  allElements.forEach(function(el) {
+                    el.style.display = 'none';
+                    el.style.visibility = 'hidden';
+                    el.style.height = '0';
+                    el.style.width = '0';
+                  });
+                  
+                  // 确保视频全屏
+                  var videos = document.querySelectorAll('video, iframe, object, embed');
+                  videos.forEach(function(video) {
+                    video.style.position = 'fixed';
+                    video.style.top = '0';
+                    video.style.left = '0';
+                    video.style.width = '100%';
+                    video.style.height = '100%';
+                    video.style.zIndex = '999999';
+                  });
+                  
+                  // 重置body样式
+                  document.body.style.padding = '0';
+                  document.body.style.margin = '0';
+                  document.body.style.overflow = 'hidden';
+                  document.body.style.background = 'black';
+                }
+                
+                // 初始执行
+                hideNonVideoElements();
+                
+                // 监听DOM变化以防动态加载内容
+                var observer = new MutationObserver(hideNonVideoElements);
+                observer.observe(document.body, {
+                  childList: true,
+                  subtree: true
+                });
+                
+                // 定期检查以防遗漏
+                setInterval(hideNonVideoElements, 1000);
+              `;
+              iframe.contentDocument.head.appendChild(script);
+            } catch(e) {
+              console.log('JS注入也失败:', e);
+            }
+          }
+          
+        } catch(e) {
+          console.log('样式注入出错:', e);
+        }
+      };
+      
+      iframe.src = tureurl;
+      document.body.appendChild(iframe);
+      console.log(tureurl);
+    } else {
+      console.log("nourls");
+    }
 
-      // 尝试自动进入全屏
-      setTimeout(() => {
-        if (iframe.requestFullscreen) {
-          iframe.requestFullscreen();
-        } else if (iframe.webkitRequestFullscreen) { // Safari
-          iframe.webkitRequestFullscreen();
-        } else if (iframe.msRequestFullscreen) { // IE/Edge
-          iframe.msRequestFullscreen();
+    function injectStyleThroughPostMessage(iframe) {
+      var styleContent = `
+        header, .header, #header, .navbar, .logo, .login-btn {
+          display: none !important;
+        }
+        body { padding-top: 0 !important; }
+        .vjs-playback-rate, [class*="speed-control"] { display: none !important; }
+      `;
+      
+      var retryCount = 0;
+      var retryInterval = setInterval(function() {
+        try {
+          iframe.contentWindow.postMessage({
+            type: 'injectStyle',
+            css: styleContent
+          }, '*');
+          
+          retryCount++;
+          if(retryCount > 5) clearInterval(retryInterval);
+        } catch(e) {
+          console.log('postMessage失败:', e);
         }
       }, 1000);
+    }
 
-      // 检测横屏（移动端）
-      function checkOrientation() {
-        if (window.innerHeight > window.innerWidth) {
-          document.getElementById('landscape-warning').style.display = 'flex';
-        } else {
-          document.getElementById('landscape-warning').style.display = 'none';
-        }
-      }
-      window.addEventListener('resize', checkOrientation);
-      checkOrientation();
+    window.addEventListener('message', function(event) {
+      console.log('收到消息:', event.data);
     });
+
+    var firefox = navigator.userAgent.indexOf('Firefox') != -1;
+    function MouseWheel(e, doc) {
+      e.preventDefault && e.preventDefault(), e.returnValue = false;
+      var up = firefox && e.detail < 0 || e.wheelDelta > 0;
+      doc.body.scrollTop = doc.documentElement.scrollTop += up ? -50 : 50;
+    }
+    function bindMouseWhee(ifr) {
+      try {
+        var doc = ifr.contentWindow.document;
+        firefox ? doc.addEventListener('DOMMouseScroll', function(e) { MouseWheel(e, doc) }, false) 
+                : (doc.onmousewheel = function(e) { MouseWheel(e || ifr.contentWindow.event, doc) });
+      } catch(e) {
+        console.log('跨域无法获取iframe加载document' + e);
+      }
+    }
   </script>
 </body>
 </html>
