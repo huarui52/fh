@@ -138,18 +138,6 @@
   <script>
     document.addEventListener('DOMContentLoaded', function() {
       document.getElementById('og-url').content = window.location.href;
-      
-      // 设置带日期的标题
-      var now = new Date();
-      var month = now.getMonth() + 1;
-      var day = now.getDate();
-      document.title = month + '月' + day + '日' + document.title;
-      
-      // 同时更新Open Graph的标题
-      var ogTitle = document.querySelector('meta[property="og:title"]');
-      if(ogTitle) {
-        ogTitle.content = month + '月' + day + '日生命密码';
-      }
     });
   </script>
 </head>
