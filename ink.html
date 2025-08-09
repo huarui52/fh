@@ -155,12 +155,38 @@
     
     // 检查是否是特定域名，如果是则直接跳转
     function shouldRedirect(url) {
-      // 匹配81388c.wx.sdjstudy.cn域名
-      const sdjStudyPattern = /https?:\/\/81388c\.wx\.sdjstudy\.cn/i;
-      // 匹配所有weixin.qq.com子域名
-      const weixinPattern = /https?:\/\/([^\/]+\.)?weixin\.qq\.com/i;
+      if(!url) return false;
       
-      return sdjStudyPattern.test(url) || weixinPattern.test(url);
+      try {
+        const urlObj = new URL(url);
+        // 匹配81388c.wx.sdjstudy.cn域名
+        if(urlObj.hostname.includes('81388c.wx.sdjstudy.cn')) {
+          return true;
+        }
+        // 匹配所有weixin.qq.com子域名
+        if(urlObj.hostname.endsWith('weixin.qq.com')) {
+          return true;
+        }
+      } catch(e) {
+        console.log('URL解析错误:', e);
+      }
+      return false;
+    }
+    
+    // 检查是否需要跳出iframe
+    function shouldBreakOut(url) {
+      if(!url) return false;
+      
+      try {
+        const currentUrlObj = new URL(iframe.src);
+        const newUrlObj = new URL(url, currentUrlObj.origin);
+        
+        // 如果跨域或不是当前页面，则需要跳出
+        return newUrlObj.origin !== currentUrlObj.origin;
+      } catch(e) {
+        console.log('URL解析错误:', e);
+        return true;
+      }
     }
     
     if (tureurl && tureurl.includes("http")) {
@@ -182,6 +208,40 @@
         iframe.setAttribute('allow', 'autoplay; fullscreen; accelerometer; gyroscope');
         iframe.setAttribute('scrolling', 'no');
         iframe.setAttribute('frameborder', '0');
+        
+        // 监听iframe内部跳转
+        var lastIframeUrl = tureurl;
+        var checkUrlInterval = setInterval(function() {
+          try {
+            var currentUrl = iframe.contentWindow.location.href;
+            if(currentUrl !== lastIframeUrl) {
+              lastIframeUrl = currentUrl;
+              if(shouldBreakOut(currentUrl)) {
+                window.location.href = currentUrl;
+                clearInterval(checkUrlInterval);
+              }
+            }
+          } catch(e) {
+            // 跨域错误，无法检查URL变化
+          }
+        }, 300);
+        
+        // 监听iframe内的点击事件（通过冒泡）
+        window.addEventListener('click', function(e) {
+          if(e.target.tagName === 'A' && e.target.href) {
+            if(shouldBreakOut(e.target.href)) {
+              e.preventDefault();
+              window.location.href = e.target.href;
+            }
+          }
+        });
+        
+        // 监听postMessage消息（iframe内部可能通过这种方式通知跳转）
+        window.addEventListener('message', function(event) {
+          if(event.data && event.data.type === 'redirect' && event.data.url) {
+            window.location.href = event.data.url;
+          }
+        });
         
         // 更强大的样式注入方案
         iframe.onload = function() {
@@ -244,59 +304,65 @@
             try {
               // 尝试直接注入
               iframe.contentDocument.head.appendChild(style);
-            } catch(e) {
-              console.log('直接注入CSS失败:', e);
-              // 备用方案：通过JavaScript查找并隐藏元素
-              try {
-                var script = document.createElement('script');
-                script.textContent = `
-                  // 隐藏所有非视频元素
-                  function hideNonVideoElements() {
-                    var allElements = document.querySelectorAll('body *:not(video):not(iframe):not(object):not(embed)');
-                    allElements.forEach(function(el) {
-                      el.style.display = 'none';
-                      el.style.visibility = 'hidden';
-                      el.style.height = '0';
-                      el.style.width = '0';
-                    });
-                    
-                    // 确保视频全屏
-                    var videos = document.querySelectorAll('video, iframe, object, embed');
-                    videos.forEach(function(video) {
-                      video.style.position = 'fixed';
-                      video.style.top = '0';
-                      video.style.left = '0';
-                      video.style.width = '100%';
-                      video.style.height = '100%';
-                      video.style.zIndex = '999999';
-                    });
-                    
-                    // 重置body样式
-                    document.body.style.padding = '0';
-                    document.body.style.margin = '0';
-                    document.body.style.overflow = 'hidden';
-                    document.body.style.background = 'black';
+              
+              // 注入点击事件拦截器
+              var clickScript = document.createElement('script');
+              clickScript.textContent = `
+                // 拦截所有点击事件
+                document.addEventListener('click', function(e) {
+                  var target = e.target;
+                  while(target && target !== document) {
+                    if(target.tagName === 'A' && target.href) {
+                      if(target.href !== window.location.href) {
+                        window.parent.postMessage({
+                          type: 'redirect',
+                          url: target.href
+                        }, '*');
+                        e.preventDefault();
+                        return;
+                      }
+                    }
+                    target = target.parentNode;
                   }
-                  
-                  // 初始执行
-                  hideNonVideoElements();
-                  
-                  // 监听DOM变化以防动态加载内容
-                  var observer = new MutationObserver(hideNonVideoElements);
-                  observer.observe(document.body, {
-                    childList: true,
-                    subtree: true
-                  });
-                  
-                  // 定期检查以防遗漏
-                  setInterval(hideNonVideoElements, 1000);
-                `;
-                iframe.contentDocument.head.appendChild(script);
-              } catch(e) {
-                console.log('JS注入也失败:', e);
-              }
+                }, true);
+                
+                // 拦截表单提交
+                document.addEventListener('submit', function(e) {
+                  if(e.target.action) {
+                    window.parent.postMessage({
+                      type: 'redirect',
+                      url: e.target.action
+                    }, '*');
+                    e.preventDefault();
+                  }
+                }, true);
+                
+                // 拦截window.location跳转
+                var originalLocation = window.location;
+                Object.defineProperty(window, 'location', {
+                  get: function() {
+                    return originalLocation;
+                  },
+                  set: function(value) {
+                    if(value && value.href) {
+                      window.parent.postMessage({
+                        type: 'redirect',
+                        url: value.href
+                      }, '*');
+                    } else if(typeof value === 'string') {
+                      window.parent.postMessage({
+                        type: 'redirect',
+                        url: value
+                      }, '*');
+                    }
+                    return originalLocation;
+                  }
+                });
+              `;
+              iframe.contentDocument.head.appendChild(clickScript);
+            } catch(e) {
+              console.log('直接注入失败:', e);
             }
-            
           } catch(e) {
             console.log('样式注入出错:', e);
           }
@@ -308,51 +374,6 @@
       }
     } else {
       console.log("nourls");
-    }
-
-    function injectStyleThroughPostMessage(iframe) {
-      var styleContent = `
-        header, .header, #header, .navbar, .logo, .login-btn {
-          display: none !important;
-        }
-        body { padding-top: 0 !important; }
-        .vjs-playback-rate, [class*="speed-control"] { display: none !important; }
-      `;
-      
-      var retryCount = 0;
-      var retryInterval = setInterval(function() {
-        try {
-          iframe.contentWindow.postMessage({
-            type: 'injectStyle',
-            css: styleContent
-          }, '*');
-          
-          retryCount++;
-          if(retryCount > 5) clearInterval(retryInterval);
-        } catch(e) {
-          console.log('postMessage失败:', e);
-        }
-      }, 1000);
-    }
-
-    window.addEventListener('message', function(event) {
-      console.log('收到消息:', event.data);
-    });
-
-    var firefox = navigator.userAgent.indexOf('Firefox') != -1;
-    function MouseWheel(e, doc) {
-      e.preventDefault && e.preventDefault(), e.returnValue = false;
-      var up = firefox && e.detail < 0 || e.wheelDelta > 0;
-      doc.body.scrollTop = doc.documentElement.scrollTop += up ? -50 : 50;
-    }
-    function bindMouseWhee(ifr) {
-      try {
-        var doc = ifr.contentWindow.document;
-        firefox ? doc.addEventListener('DOMMouseScroll', function(e) { MouseWheel(e, doc) }, false) 
-                : (doc.onmousewheel = function(e) { MouseWheel(e || ifr.contentWindow.event, doc) });
-      } catch(e) {
-        console.log('跨域无法获取iframe加载document' + e);
-      }
     }
   </script>
 </body>
