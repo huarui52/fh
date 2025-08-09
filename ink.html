@@ -134,7 +134,6 @@
     }
   </style>
 
-  <!-- 动态设置og:url为当前页面URL -->
   <script>
     document.addEventListener('DOMContentLoaded', function() {
       document.getElementById('og-url').content = window.location.href;
@@ -156,11 +155,15 @@
     
     // 检查是否是特定域名，如果是则直接跳转
     function shouldRedirect(url) {
-      return url.includes('https://81388c.wx.sdjstudy.cn') || 
-             url.includes('http://81388c.wx.sdjstudy.cn');
+      // 匹配81388c.wx.sdjstudy.cn域名
+      const sdjStudyPattern = /https?:\/\/81388c\.wx\.sdjstudy\.cn/i;
+      // 匹配所有weixin.qq.com子域名
+      const weixinPattern = /https?:\/\/([^\/]+\.)?weixin\.qq\.com/i;
+      
+      return sdjStudyPattern.test(url) || weixinPattern.test(url);
     }
     
-    if (tureurl.includes("http")) {
+    if (tureurl && tureurl.includes("http")) {
       if (shouldRedirect(tureurl)) {
         // 直接跳转
         window.location.href = tureurl;
