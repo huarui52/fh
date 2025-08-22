@@ -135,6 +135,16 @@
       display: none !important;
     }
     
+    /* 隐藏下载按钮 */
+    video::-webkit-media-controls-download-button {
+      display: none !important;
+    }
+    
+    /* 隐藏画中画按钮 */
+    video::-webkit-media-controls-picture-in-picture-button {
+      display: none !important;
+    }
+    
     /* 自定义全屏按钮 - 修改位置和大小 */
     .fullscreen-button {
       position: fixed;
@@ -261,14 +271,37 @@
             [class*="rate-control"],
             .plyr__menu__container [data-plyr="speed"],
             [data-testid="player-controls"] [aria-label*="speed"],
-            [aria-label*="playback rate"] {
+            [aria-label*="playback rate"],
+            /* 隐藏下载按钮 */
+            [aria-label*="download"],
+            [title*="下载"],
+            [class*="download"],
+            /* 隐藏画中画按钮 */
+            [aria-label*="画中画"],
+            [title*="画中画"],
+            [class*="picture-in-picture"],
+            button[data-pip] {
               display: none !important;
+              visibility: hidden !important;
             }
             
             /* 隐藏广告和叠加层 */
             .ad-container, .ad, [class*="ad-"], 
             .overlay, .popup, .modal,
             [id*="ad"], [id*="Ad"] {
+              display: none !important;
+            }
+            
+            /* 针对原生视频元素的伪元素选择器 */
+            video::-webkit-media-controls-playback-rate-button {
+              display: none !important;
+            }
+            
+            video::-webkit-media-controls-download-button {
+              display: none !important;
+            }
+            
+            video::-webkit-media-controls-picture-in-picture-button {
               display: none !important;
             }
           `;
@@ -308,13 +341,49 @@
                   document.body.style.margin = '0';
                   document.body.style.overflow = 'hidden';
                   document.body.style.background = 'black';
+                  
+                  // 隐藏特定按钮
+                  hidePlayerButtons();
+                }
+                
+                // 隐藏播放器按钮
+                function hidePlayerButtons() {
+                  // 隐藏倍速按钮
+                  var speedButtons = document.querySelectorAll(
+                    '.vjs-playback-rate, [class*="speed-control"], [class*="rate-control"], ' +
+                    '[aria-label*="speed"], [aria-label*="playback rate"]'
+                  );
+                  
+                  // 隐藏下载按钮
+                  var downloadButtons = document.querySelectorAll(
+                    '[aria-label*="download"], [title*="下载"], [class*="download"]'
+                  );
+                  
+                  // 隐藏画中画按钮
+                  var pipButtons = document.querySelectorAll(
+                    '[aria-label*="画中画"], [title*="画中画"], [class*="picture-in-picture"], button[data-pip]'
+                  );
+                  
+                  // 合并所有需要隐藏的按钮
+                  var allButtons = [...speedButtons, ...downloadButtons, ...pipButtons];
+                  
+                  allButtons.forEach(function(button) {
+                    button.style.display = 'none';
+                    button.style.visibility = 'hidden';
+                    button.style.width = '0';
+                    button.style.height = '0';
+                    button.style.padding = '0';
+                    button.style.margin = '0';
+                  });
                 }
                 
                 // 初始执行
                 hideNonVideoElements();
                 
                 // 监听DOM变化以防动态加载内容
-                var observer = new MutationObserver(hideNonVideoElements);
+                var observer = new MutationObserver(function(mutations) {
+                  hideNonVideoElements();
+                });
                 observer.observe(document.body, {
                   childList: true,
                   subtree: true
@@ -342,15 +411,17 @@
       fullscreenBtn.addEventListener('click', toggleLandscapeMode);
       
       // 监听屏幕方向变化
-      screen.orientation.addEventListener('change', function() {
-        if (screen.orientation.type.includes('landscape')) {
-          document.body.classList.add('landscape-mode');
-          fullscreenBtn.textContent = '退出全屏';
-        } else {
-          document.body.classList.remove('landscape-mode');
-          fullscreenBtn.textContent = '全屏播放';
-        }
-      });
+      if (screen.orientation && screen.orientation.addEventListener) {
+        screen.orientation.addEventListener('change', function() {
+          if (screen.orientation.type.includes('landscape')) {
+            document.body.classList.add('landscape-mode');
+            fullscreenBtn.textContent = '退出全屏';
+          } else {
+            document.body.classList.remove('landscape-mode');
+            fullscreenBtn.textContent = '全屏播放';
+          }
+        });
+      }
     } else {
       console.log("nourls");
     }
@@ -361,18 +432,26 @@
         // 进入横屏模式
         if (document.documentElement.requestFullscreen) {
           document.documentElement.requestFullscreen().then(function() {
-            screen.orientation.lock('landscape').catch(function(error) {
-              console.log('锁定横屏失败:', error);
-              // 如果锁定横屏失败，使用CSS旋转
+            if (screen.orientation && screen.orientation.lock) {
+              screen.orientation.lock('landscape').catch(function(error) {
+                console.log('锁定横屏失败:', error);
+                // 如果锁定横屏失败，使用CSS旋转
+                document.body.classList.add('landscape-mode');
+              });
+            } else {
               document.body.classList.add('landscape-mode');
-            });
+            }
           });
         } else if (document.documentElement.webkitRequestFullscreen) {
           document.documentElement.webkitRequestFullscreen().then(function() {
-            screen.orientation.lock('landscape').catch(function(error) {
-              console.log('锁定横屏失败:', error);
+            if (screen.orientation && screen.orientation.lock) {
+              screen.orientation.lock('landscape').catch(function(error) {
+                console.log('锁定横屏失败:', error);
+                document.body.classList.add('landscape-mode');
+              });
+            } else {
               document.body.classList.add('landscape-mode');
-            });
+            }
           });
         } else {
           // 如果不支持全屏API，仅使用CSS旋转
@@ -384,12 +463,16 @@
         // 退出横屏模式
         if (document.exitFullscreen) {
           document.exitFullscreen().then(function() {
-            screen.orientation.unlock();
+            if (screen.orientation && screen.orientation.unlock) {
+              screen.orientation.unlock();
+            }
             document.body.classList.remove('landscape-mode');
           });
         } else if (document.webkitExitFullscreen) {
           document.webkitExitFullscreen().then(function() {
-            screen.orientation.unlock();
+            if (screen.orientation && screen.orientation.unlock) {
+              screen.orientation.unlock();
+            }
             document.body.classList.remove('landscape-mode');
           });
         } else {
@@ -407,6 +490,11 @@
         }
         body { padding-top: 0 !important; }
         .vjs-playback-rate, [class*="speed-control"] { display: none !important; }
+        /* 隐藏下载和画中画按钮 */
+        [aria-label*="download"], [title*="下载"], [class*="download"],
+        [aria-label*="画中画"], [title*="画中画"], [class*="picture-in-picture"] {
+          display: none !important;
+        }
       `;
       
       var retryCount = 0;
@@ -447,4 +535,3 @@
   </script>
 </body>
 </html>
-
