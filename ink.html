@@ -21,7 +21,7 @@
   <meta property="wechat:miniprogram" content="" />
   <meta property="wechat:miniprogram_image" content="" />
 
-  <title>百草珍酿学习课</title>
+  <title>百草珍55</title>
 
   <style>
     .container {
@@ -138,22 +138,22 @@
     /* 自定义全屏按钮 - 修改位置和大小 */
     .fullscreen-button {
       position: fixed;
-      right: 15px; /* 改为右侧 */
+      right: 15px;
       bottom: 15px;
       z-index: 9999;
       background: rgba(0, 0, 0, 0.5);
       color: white;
       border: none;
       border-radius: 4px;
-      padding: 10px 15px; /* 增加内边距 */
-      font-size: 16px; /* 增大字体大小 */
+      padding: 10px 15px;
+      font-size: 16px;
       cursor: pointer;
       display: none;
     }
     
     /* 横屏模式样式 */
     .landscape-mode {
-      transform: rotate(90deg);
+      transform: rotate(90deg) scale(0.9); /* 添加缩放90% */
       transform-origin: center center;
       width: 100vh;
       height: 100vw;
@@ -162,12 +162,44 @@
       left: 50%;
       margin-top: -50vw;
       margin-left: -50vh;
+      overflow: hidden;
     }
     
     /* 横屏模式下的iframe */
     .landscape-mode iframe {
       width: 100vh !important;
       height: 100vw !important;
+      transform: scale(1); /* 保持原始尺寸 */
+    }
+    
+    /* 全屏时的遮罩层，用于处理横屏模式 */
+    #landscape-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: #000;
+      z-index: 9998;
+      display: none;
+      justify-content: center;
+      align-items: center;
+    }
+    
+    /* 横屏提示 */
+    .landscape-tip {
+      color: white;
+      font-size: 18px;
+      text-align: center;
+      display: none;
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      z-index: 10000;
+      background: rgba(0, 0, 0, 0.7);
+      padding: 20px;
+      border-radius: 10px;
     }
   </style>
 
@@ -186,7 +218,9 @@
     <div class="dot dot-3"></div>
   </div>
   
-  <button class="fullscreen-button" id="fullscreenBtn">全屏播放</button> <!-- 修改文字 -->
+  <div id="landscape-overlay"></div>
+  <div class="landscape-tip">请横屏以获得最佳观看体验</div>
+  <button class="fullscreen-button" id="fullscreenBtn">全屏播放</button>
 
   <script>
     var urlParams = new URLSearchParams(window.location.search);
@@ -195,7 +229,10 @@
     
     // 创建全屏按钮
     var fullscreenBtn = document.getElementById('fullscreenBtn');
+    var landscapeOverlay = document.getElementById('landscape-overlay');
+    var landscapeTip = document.querySelector('.landscape-tip');
     var isLandscapeMode = false;
+    var isFullscreen = false;
     
     if (tureurl.includes("http")) {
       var square = document.querySelector(".container");
@@ -339,64 +376,99 @@
       console.log(tureurl);
       
       // 添加全屏按钮事件监听
-      fullscreenBtn.addEventListener('click', toggleLandscapeMode);
+      fullscreenBtn.addEventListener('click', toggleFullscreen);
       
       // 监听屏幕方向变化
-      screen.orientation.addEventListener('change', function() {
-        if (screen.orientation.type.includes('landscape')) {
-          document.body.classList.add('landscape-mode');
-          fullscreenBtn.textContent = '退出全屏';
-        } else {
-          document.body.classList.remove('landscape-mode');
-          fullscreenBtn.textContent = '全屏播放';
-        }
-      });
+      if (screen.orientation) {
+        screen.orientation.addEventListener('change', handleOrientationChange);
+      } else {
+        window.addEventListener('resize', handleOrientationChange);
+      }
+      
+      // 监听全屏变化
+      document.addEventListener('fullscreenchange', handleFullscreenChange);
+      document.addEventListener('webkitfullscreenchange', handleFullscreenChange);
+      document.addEventListener('mozfullscreenchange', handleFullscreenChange);
     } else {
       console.log("nourls");
     }
     
-    // 横屏全屏功能
-    function toggleLandscapeMode() {
-      if (!isLandscapeMode) {
-        // 进入横屏模式
-        if (document.documentElement.requestFullscreen) {
-          document.documentElement.requestFullscreen().then(function() {
-            screen.orientation.lock('landscape').catch(function(error) {
-              console.log('锁定横屏失败:', error);
-              // 如果锁定横屏失败，使用CSS旋转
-              document.body.classList.add('landscape-mode');
-            });
-          });
-        } else if (document.documentElement.webkitRequestFullscreen) {
-          document.documentElement.webkitRequestFullscreen().then(function() {
-            screen.orientation.lock('landscape').catch(function(error) {
-              console.log('锁定横屏失败:', error);
-              document.body.classList.add('landscape-mode');
-            });
-          });
+    // 处理方向变化
+    function handleOrientationChange() {
+      if (isFullscreen) {
+        if (window.innerHeight > window.innerWidth) {
+          // 竖屏模式
+          landscapeTip.style.display = 'block';
         } else {
-          // 如果不支持全屏API，仅使用CSS旋转
+          // 横屏模式
+          landscapeTip.style.display = 'none';
           document.body.classList.add('landscape-mode');
         }
+      }
+    }
+    
+    // 处理全屏变化
+    function handleFullscreenChange() {
+      const fullscreenElement = document.fullscreenElement || document.webkitFullscreenElement || document.mozFullScreenElement;
+      
+      if (fullscreenElement) {
+        isFullscreen = true;
         fullscreenBtn.textContent = '退出全屏';
-        isLandscapeMode = true;
-      } else {
-        // 退出横屏模式
-        if (document.exitFullscreen) {
-          document.exitFullscreen().then(function() {
-            screen.orientation.unlock();
-            document.body.classList.remove('landscape-mode');
-          });
-        } else if (document.webkitExitFullscreen) {
-          document.webkitExitFullscreen().then(function() {
-            screen.orientation.unlock();
-            document.body.classList.remove('landscape-mode');
+        landscapeOverlay.style.display = 'flex';
+        
+        // 尝试锁定横屏
+        if (screen.orientation && screen.orientation.lock) {
+          screen.orientation.lock('landscape').then(() => {
+            document.body.classList.add('landscape-mode');
+          }).catch((error) => {
+            console.log('锁定横屏失败:', error);
+            document.body.classList.add('landscape-mode');
+            // 显示横屏提示
+            if (window.innerHeight > window.innerWidth) {
+              landscapeTip.style.display = 'block';
+            }
           });
         } else {
-          document.body.classList.remove('landscape-mode');
+          document.body.classList.add('landscape-mode');
+          // 显示横屏提示
+          if (window.innerHeight > window.innerWidth) {
+            landscapeTip.style.display = 'block';
+          }
         }
+      } else {
+        isFullscreen = false;
         fullscreenBtn.textContent = '全屏播放';
-        isLandscapeMode = false;
+        document.body.classList.remove('landscape-mode');
+        landscapeOverlay.style.display = 'none';
+        landscapeTip.style.display = 'none';
+        
+        // 解锁屏幕方向
+        if (screen.orientation && screen.orientation.unlock) {
+          screen.orientation.unlock();
+        }
+      }
+    }
+    
+    // 全屏功能
+    function toggleFullscreen() {
+      if (!isFullscreen) {
+        // 进入全屏
+        if (document.documentElement.requestFullscreen) {
+          document.documentElement.requestFullscreen();
+        } else if (document.documentElement.webkitRequestFullscreen) {
+          document.documentElement.webkitRequestFullscreen();
+        } else if (document.documentElement.mozRequestFullScreen) {
+          document.documentElement.mozRequestFullScreen();
+        }
+      } else {
+        // 退出全屏
+        if (document.exitFullscreen) {
+          document.exitFullscreen();
+        } else if (document.webkitExitFullscreen) {
+          document.webkitExitFullscreen();
+        } else if (document.mozCancelFullScreen) {
+          document.mozCancelFullScreen();
+        }
       }
     }
 
