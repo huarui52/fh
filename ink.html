@@ -10,7 +10,7 @@
   <meta content="true" name="HandheldFriendly">
   <meta name="mobile-web-app-capable" content="yes">
 
-  <title>百草珍酿学习课</title>
+  <title>百草珍酿44学习课</title>
 
   <style>
     * {
@@ -139,47 +139,6 @@
       transform: scale(1.05);
     }
     
-    /* 横屏提示 */
-    .landscape-tip {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background: rgba(0, 0, 0, 0.95);
-      z-index: 10000;
-      display: none;
-      flex-direction: column;
-      justify-content: center;
-      align-items: center;
-      text-align: center;
-      padding: 20px;
-    }
-    
-    .landscape-tip h2 {
-      font-size: 24px;
-      margin-bottom: 20px;
-      color: #ffe386;
-    }
-    
-    .landscape-tip p {
-      font-size: 18px;
-      margin-bottom: 30px;
-      max-width: 80%;
-      line-height: 1.5;
-    }
-    
-    .landscape-icon {
-      font-size: 60px;
-      margin-bottom: 30px;
-      animation: rotate-icon 2s infinite ease-in-out;
-    }
-    
-    @keyframes rotate-icon {
-      0%, 100% { transform: rotate(0deg); }
-      50% { transform: rotate(90deg); }
-    }
-    
     /* 横屏模式 */
     .landscape-mode {
       position: fixed;
@@ -198,7 +157,7 @@
       left: 2.5%;
       width: 95%;
       height: 95%;
-      transform: rotate(90deg) scale(0.95);
+      transform: rotate(90deg);
       transform-origin: center center;
       border: none;
     }
@@ -251,13 +210,6 @@
   <div class="loading-text">视频加载中，请稍候...</div>
   
   <div class="content" id="videoContent"></div>
-  <div class="landscape-tip" id="landscapeTip">
-    <div class="landscape-icon">📱</div>
-    <h2>请横屏观看</h2>
-    <p>为了获得最佳观看体验，请将手机旋转至横屏模式</p>
-    <p>视频将自动播放</p>
-  </div>
-  
   <div class="landscape-mode" id="landscapeMode"></div>
   
   <button class="fullscreen-button" id="fullscreenBtn">全屏播放</button>
@@ -272,13 +224,12 @@
     // 获取DOM元素
     var fullscreenBtn = document.getElementById('fullscreenBtn');
     var exitFullscreenBtn = document.getElementById('exitFullscreenBtn');
-    var landscapeTip = document.getElementById('landscapeTip');
     var landscapeMode = document.getElementById('landscapeMode');
     var videoContent = document.getElementById('videoContent');
     var container = document.querySelector('.container');
     var loadingText = document.querySelector('.loading-text');
     
-    var isLandscapeMode = false;
+    var isFullscreenMode = false;
     
     if (trueurl && trueurl.includes("http")) {
       // 隐藏加载动画
@@ -339,25 +290,6 @@
       fullscreenBtn.addEventListener('click', enterFullscreen);
       exitFullscreenBtn.addEventListener('click', exitFullscreen);
       
-      // 监听屏幕方向变化
-      function checkOrientation() {
-        if (isLandscapeMode) {
-          if (window.innerHeight > window.innerWidth) {
-            // 竖屏模式
-            landscapeTip.style.display = 'flex';
-          } else {
-            // 横屏模式
-            landscapeTip.style.display = 'none';
-          }
-        }
-      }
-      
-      // 初始检查
-      checkOrientation();
-      
-      // 监听resize事件
-      window.addEventListener('resize', checkOrientation);
-      
     } else {
       console.log("无效的URL参数");
       container.style.display = "none";
@@ -366,10 +298,11 @@
     
     // 进入全屏模式
     function enterFullscreen() {
-      isLandscapeMode = true;
+      isFullscreenMode = true;
       landscapeMode.style.display = 'block';
       exitFullscreenBtn.style.display = 'flex';
       fullscreenBtn.style.display = 'none';
+      videoContent.style.display = 'none';
       
       // 复制iframe到横屏模式容器
       var iframe = videoContent.querySelector('iframe');
@@ -378,9 +311,6 @@
         landscapeMode.innerHTML = '';
         landscapeMode.appendChild(clonedIframe);
       }
-      
-      // 检查方向
-      checkOrientation();
       
       // 尝试锁定横屏
       if (screen.orientation && screen.orientation.lock) {
@@ -392,11 +322,11 @@
     
     // 退出全屏模式
     function exitFullscreen() {
-      isLandscapeMode = false;
+      isFullscreenMode = false;
       landscapeMode.style.display = 'none';
-      landscapeTip.style.display = 'none';
       exitFullscreenBtn.style.display = 'none';
       fullscreenBtn.style.display = 'block';
+      videoContent.style.display = 'block';
       
       // 尝试解锁屏幕方向
       if (screen.orientation && screen.orientation.unlock) {
