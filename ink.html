@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>百草珍酿学习888课</title>
+  <title>百草珍酿学习85课</title>
   <style>
     * {
       margin: 0;
@@ -380,6 +380,7 @@
         playTip.style.display = 'block';
         playButton.style.display = 'flex';
         fullscreenButton.style.display = 'block';
+        videoCover.style.display = 'flex'; // 确保封面显示
       }, 1500);
       
       // 播放按钮事件
@@ -409,7 +410,7 @@
         isPlaying = true;
         playButton.style.display = 'none';
         playTip.style.display = 'none';
-        videoCover.style.display = 'none';
+        videoCover.style.display = 'none'; // 播放时隐藏封面
         pauseButton.style.display = 'none';
         
         // 隐藏进度条和时间显示
@@ -444,7 +445,7 @@
         isPlaying = false;
         playButton.style.display = 'flex';
         playButton.innerHTML = '▶';
-        videoCover.style.display = 'flex';
+        videoCover.style.display = 'flex'; // 结束时显示封面
         pauseButton.style.display = 'none';
         
         // 隐藏进度条和时间显示
@@ -480,7 +481,7 @@
               isPlaying = true;
               playButton.style.display = 'none';
               playTip.style.display = 'none';
-              videoCover.style.display = 'none';
+              videoCover.style.display = 'none'; // 播放时隐藏封面
               pauseButton.style.display = 'none';
               
               // 隐藏进度条和时间显示
