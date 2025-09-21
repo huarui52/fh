@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>百草珍酿学习课</title>
+  <title>百草珍酿学习1课</title>
   <style>
     * {
       margin: 0;
@@ -94,7 +94,33 @@
       100% { transform: translate(-50%, -50%) rotate(360deg); }
     }
     
-    /* 播放提示 - 调整：更大且居中 */
+    /* 缓冲提示 */
+    .buffering-tip {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      text-align: center;
+      color: white;
+      font-size: 28px;
+      font-weight: bold;
+      text-shadow: 2px 2px 8px rgba(0, 0, 0, 0.9);
+      z-index: 95;
+      padding: 20px;
+      width: 100%;
+      display: none;
+      background: rgba(0, 0, 0, 0.7);
+      border-radius: 15px;
+      max-width: 80%;
+    }
+    
+    .countdown {
+      font-size: 36px;
+      color: #f74d75;
+      margin-top: 10px;
+    }
+    
+    /* 播放提示 */
     .play-tip {
       position: fixed;
       top: 50%;
@@ -109,6 +135,7 @@
       animation: fadeInOut 2s infinite;
       padding: 0 20px;
       width: 100%;
+      display: none;
     }
     
     @keyframes fadeInOut {
@@ -137,7 +164,7 @@
       object-fit: contain;
     }
     
-    /* 播放按钮 - 调整：更大且居中 */
+    /* 播放按钮 */
     .play-button {
       position: fixed;
       top: 50%;
@@ -152,7 +179,7 @@
       height: 80px;
       font-size: 36px;
       cursor: pointer;
-      display: flex;
+      display: none;
       justify-content: center;
       align-items: center;
       transition: all 0.3s;
@@ -184,7 +211,7 @@
       transition: all 0.3s;
     }
     
-    /* 全屏按钮 - 调整：移除圆圈，改为文本按钮 */
+    /* 全屏按钮 */
     .fullscreen-button {
       position: fixed;
       right: 20px;
@@ -198,6 +225,7 @@
       font-size: 16px;
       cursor: pointer;
       transition: all 0.3s;
+      display: none;
     }
     
     .fullscreen-button:hover {
@@ -249,6 +277,7 @@
       height: 100%;
       z-index: 97;
       cursor: pointer;
+      display: none;
     }
     
     /* 进度条容器 */
@@ -296,6 +325,12 @@
     <div class="dot dot-3"></div>
   </div>
   
+  <!-- 缓冲提示 -->
+  <div class="buffering-tip" id="bufferingTip">
+    <div>视频缓冲中，请稍候...</div>
+    <div class="countdown" id="countdown">5秒</div>
+  </div>
+  
   <!-- 播放提示 -->
   <div class="play-tip" id="playTip">请点击下面的播放键进行学习</div>
   
@@ -336,6 +371,8 @@
     document.addEventListener('DOMContentLoaded', function() {
       // 获取DOM元素
       const loader = document.querySelector('.loader');
+      const bufferingTip = document.getElementById('bufferingTip');
+      const countdown = document.getElementById('countdown');
       const playTip = document.getElementById('playTip');
       const customPlayer = document.getElementById('customPlayer');
       const videoElement = document.getElementById('videoElement');
@@ -353,6 +390,11 @@
       let isPlaying = false;
       let progressTimer = null;
       let hideControlsTimer = null;
+      let countdownTimer = null;
+      let countdownValue = 5;
+      
+      // 显示缓冲提示
+      bufferingTip.style.display = 'block';
       
       // 获取URL参数
       const urlParams = new URLSearchParams(window.location.search);
@@ -380,13 +422,37 @@
       // 设置视频源
       videoElement.src = videoUrl;
       
-      // 隐藏加载动画
-      setTimeout(() => {
+      // 开始缓冲视频
+      videoElement.load();
+      
+      // 开始倒计时
+      startCountdown();
+      
+      // 倒计时函数
+      function startCountdown() {
+        countdown.textContent = countdownValue + '秒';
+        
+        countdownTimer = setInterval(() => {
+          countdownValue--;
+          
+          if (countdownValue > 0) {
+            countdown.textContent = countdownValue + '秒';
+          } else {
+            clearInterval(countdownTimer);
+            finishBuffering();
+          }
+        }, 1000);
+      }
+      
+      // 完成缓冲
+      function finishBuffering() {
         loader.style.display = 'none';
+        bufferingTip.style.display = 'none';
         playTip.style.display = 'block';
         playButton.style.display = 'flex';
         fullscreenButton.style.display = 'block';
-      }, 1500);
+        clickArea.style.display = 'block';
+      }
       
       // 播放按钮事件
       playButton.addEventListener('click', function() {
@@ -436,6 +502,14 @@
         
         // 停止更新进度
         stopProgressUpdate();
+        
+        // 3秒后自动隐藏暂停按钮
+        clearTimeout(hideControlsTimer);
+        hideControlsTimer = setTimeout(() => {
+          if (!isPlaying) {
+            pauseButton.style.display = 'none';
+          }
+        }, 3000);
       });
       
       videoElement.addEventListener('ended', function() {
@@ -605,6 +679,8 @@
       // 错误处理
       function showError(message) {
         loader.style.display = 'none';
+        bufferingTip.style.display = 'none';
+        if (countdownTimer) clearInterval(countdownTimer);
         errorMessage.textContent = message;
         errorMessage.style.display = 'block';
         console.error(message);
