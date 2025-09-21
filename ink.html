@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>百草珍酿学习85课</title>
+  <title>百草珍酿222学习课</title>
   <style>
     * {
       margin: 0;
@@ -109,6 +109,7 @@
       animation: fadeInOut 2s infinite;
       padding: 0 20px;
       width: 100%;
+      display: none; /* 初始隐藏 */
     }
     
     @keyframes fadeInOut {
@@ -152,7 +153,7 @@
       height: 80px;
       font-size: 36px;
       cursor: pointer;
-      display: flex;
+      display: none; /* 初始隐藏 */
       justify-content: center;
       align-items: center;
       transition: all 0.3s;
@@ -198,6 +199,7 @@
       font-size: 16px;
       cursor: pointer;
       transition: all 0.3s;
+      display: none; /* 初始隐藏 */
     }
     
     .fullscreen-button:hover {
@@ -234,6 +236,7 @@
       background-image: url('https://img20.360buyimg.com/openfeedback/jfs/t1/326035/11/22691/203078/68cfa87cF3130407d/9aaa93b2b84e2941.jpg');
       background-size: cover;
       background-position: center;
+      background-repeat: no-repeat;
     }
     
     /* 点击区域 */
@@ -245,6 +248,7 @@
       height: 100%;
       z-index: 97;
       cursor: pointer;
+      display: none; /* 初始隐藏 */
     }
     
     /* 进度条容器 */
@@ -348,6 +352,9 @@
       let progressTimer = null;
       let hideControlsTimer = null;
       
+      // 初始状态：显示封面
+      videoCover.style.display = 'flex';
+      
       // 获取URL参数
       const urlParams = new URLSearchParams(window.location.search);
       const encodedParam = urlParams.get('c');
@@ -380,7 +387,7 @@
         playTip.style.display = 'block';
         playButton.style.display = 'flex';
         fullscreenButton.style.display = 'block';
-        videoCover.style.display = 'flex'; // 确保封面显示
+        clickArea.style.display = 'block'; // 显示点击区域
       }, 1500);
       
       // 播放按钮事件
