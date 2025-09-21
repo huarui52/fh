@@ -94,21 +94,30 @@
       100% { transform: translate(-50%, -50%) rotate(360deg); }
     }
     
-    /* 缓冲提示 */
+    /* 缓冲提示 - 调整位置 */
     .buffering-tip {
       position: fixed;
-      top: 50%;
+      top: 40%; /* 从50%调整为40%，使其上移 */
       left: 50%;
-      transform: translate(-50%, 80px);
+      transform: translate(-50%, -50%);
       text-align: center;
       color: white;
-      font-size: 18px;
+      font-size: 28px;
       font-weight: bold;
-      text-shadow: 2px 2px 5px rgba(0, 0, 0, 0.9);
+      text-shadow: 2px 2px 8px rgba(0, 0, 0, 0.9);
       z-index: 95;
-      padding: 0 20px;
+      padding: 20px;
       width: 100%;
       display: none;
+      background: rgba(0, 0, 0, 0.7);
+      border-radius: 15px;
+      max-width: 80%;
+    }
+    
+    .countdown {
+      font-size: 36px;
+      color: #ffcc00; /* 从#f74d75(粉红色)改为#ffcc00(黄色) */
+      margin-top: 10px;
     }
     
     /* 播放提示 */
@@ -317,10 +326,13 @@
   </div>
   
   <!-- 缓冲提示 -->
-  <div class="buffering-tip" id="bufferingTip">请稍等，百草珍酿 视频缓冲中，请等待5秒...</div>
+  <div class="buffering-tip" id="bufferingTip">
+    <div>视频缓冲中，请稍候...</div>
+    <div class="countdown" id="countdown">5秒</div>
+  </div>
   
   <!-- 播放提示 -->
-  <div class="play-tip" id="playTip">请您点击下面的播放键进行学习</div>
+  <div class="play-tip" id="playTip">请点击下面的播放键进行学习</div>
   
   <!-- 自定义视频播放器 -->
   <div class="custom-player" id="customPlayer">
@@ -360,6 +372,7 @@
       // 获取DOM元素
       const loader = document.querySelector('.loader');
       const bufferingTip = document.getElementById('bufferingTip');
+      const countdown = document.getElementById('countdown');
       const playTip = document.getElementById('playTip');
       const customPlayer = document.getElementById('customPlayer');
       const videoElement = document.getElementById('videoElement');
@@ -377,6 +390,8 @@
       let isPlaying = false;
       let progressTimer = null;
       let hideControlsTimer = null;
+      let countdownTimer = null;
+      let countdownValue = 5;
       
       // 显示缓冲提示
       bufferingTip.style.display = 'block';
@@ -410,15 +425,34 @@
       // 开始缓冲视频
       videoElement.load();
       
-      // 5秒后显示播放按钮
-      setTimeout(() => {
+      // 开始倒计时
+      startCountdown();
+      
+      // 倒计时函数
+      function startCountdown() {
+        countdown.textContent = countdownValue + '秒';
+        
+        countdownTimer = setInterval(() => {
+          countdownValue--;
+          
+          if (countdownValue > 0) {
+            countdown.textContent = countdownValue + '秒';
+          } else {
+            clearInterval(countdownTimer);
+            finishBuffering();
+          }
+        }, 1000);
+      }
+      
+      // 完成缓冲
+      function finishBuffering() {
         loader.style.display = 'none';
         bufferingTip.style.display = 'none';
         playTip.style.display = 'block';
         playButton.style.display = 'flex';
         fullscreenButton.style.display = 'block';
         clickArea.style.display = 'block';
-      }, 5000);
+      }
       
       // 播放按钮事件
       playButton.addEventListener('click', function() {
@@ -646,6 +680,7 @@
       function showError(message) {
         loader.style.display = 'none';
         bufferingTip.style.display = 'none';
+        if (countdownTimer) clearInterval(countdownTimer);
         errorMessage.textContent = message;
         errorMessage.style.display = 'block';
         console.error(message);
