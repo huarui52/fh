@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>百草珍酿学习4课</title>
+  <title>百草珍酿66学习课</title>
   <style>
     * {
       margin: 0;
@@ -93,19 +93,21 @@
       100% { transform: translate(-50%, -50%) rotate(360deg); }
     }
     
-    /* 播放提示 */
+    /* 播放提示 - 调整：更大且居中 */
     .play-tip {
       position: fixed;
-      bottom: 80px;
-      left: 0;
-      right: 0;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -80px);
       text-align: center;
       color: white;
-      font-size: 18px;
-      text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.8);
-      z-index: 99;
+      font-size: 24px;
+      font-weight: bold;
+      text-shadow: 2px 2px 5px rgba(0, 0, 0, 0.9);
+      z-index: 95;
       animation: fadeInOut 2s infinite;
       padding: 0 20px;
+      width: 100%;
     }
     
     @keyframes fadeInOut {
@@ -134,20 +136,20 @@
       object-fit: contain;
     }
     
-    /* 播放按钮 */
+    /* 播放按钮 - 调整：更大且居中 */
     .play-button {
       position: fixed;
-      bottom: 20px;
+      top: 50%;
       left: 50%;
-      transform: translateX(-50%);
+      transform: translate(-50%, 40px);
       z-index: 99;
       background: rgba(0, 0, 0, 0.6);
       color: white;
       border: 2px solid rgba(255, 255, 255, 0.7);
       border-radius: 50%;
-      width: 60px;
-      height: 60px;
-      font-size: 24px;
+      width: 80px;
+      height: 80px;
+      font-size: 36px;
       cursor: pointer;
       display: flex;
       justify-content: center;
@@ -157,32 +159,27 @@
     
     .play-button:hover {
       background: rgba(0, 0, 0, 0.8);
-      transform: translateX(-50%) scale(1.05);
+      transform: translate(-50%, 40px) scale(1.05);
     }
     
-    /* 全屏按钮 */
+    /* 全屏按钮 - 调整：移除圆圈，改为文本按钮 */
     .fullscreen-button {
       position: fixed;
       right: 20px;
       bottom: 20px;
       z-index: 99;
-      background: rgba(0, 0, 0, 0.6);
+      background: rgba(0, 0, 0, 0.7);
       color: white;
-      border: 2px solid rgba(255, 255, 255, 0.7);
-      border-radius: 50%;
-      width: 50px;
-      height: 50px;
-      font-size: 20px;
+      border: none;
+      border-radius: 5px;
+      padding: 10px 15px;
+      font-size: 16px;
       cursor: pointer;
-      display: flex;
-      justify-content: center;
-      align-items: center;
       transition: all 0.3s;
     }
     
     .fullscreen-button:hover {
-      background: rgba(0, 0, 0, 0.8);
-      transform: scale(1.05);
+      background: rgba(0, 0, 0, 0.9);
     }
     
     /* 错误提示 */
@@ -199,6 +196,27 @@
       z-index: 200;
       display: none;
     }
+    
+    /* 视频封面 */
+    .video-cover {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: #000;
+      z-index: 85;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+    
+    .video-cover img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      opacity: 0.7;
+    }
   </style>
 </head>
 <body>
@@ -210,18 +228,23 @@
   </div>
   
   <!-- 播放提示 -->
-  <div class="play-tip" id="playTip">请点击下面播放键开始学习</div>
+  <div class="play-tip" id="playTip">请点击下面的播放键进行学习</div>
   
   <!-- 自定义视频播放器 -->
   <div class="custom-player" id="customPlayer">
     <video id="videoElement" playsinline webkit-playsinline></video>
   </div>
   
+  <!-- 视频封面 -->
+  <div class="video-cover" id="videoCover">
+    <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 800 450' fill='%23333'%3E%3Cpath d='M400,225 L500,175 L500,275 Z' fill='%23666'/%3E%3C/svg%3E" alt="视频封面">
+  </div>
+  
   <!-- 播放按钮 -->
   <button class="play-button" id="playButton">▶</button>
   
   <!-- 全屏按钮 -->
-  <button class="fullscreen-button" id="fullscreenButton">⛶</button>
+  <button class="fullscreen-button" id="fullscreenButton">全屏播放</button>
   
   <!-- 错误提示 -->
   <div class="error-message" id="errorMessage"></div>
@@ -233,6 +256,7 @@
       const playTip = document.getElementById('playTip');
       const customPlayer = document.getElementById('customPlayer');
       const videoElement = document.getElementById('videoElement');
+      const videoCover = document.getElementById('videoCover');
       const playButton = document.getElementById('playButton');
       const fullscreenButton = document.getElementById('fullscreenButton');
       const errorMessage = document.getElementById('errorMessage');
@@ -268,7 +292,7 @@
         loader.style.display = 'none';
         playTip.style.display = 'block';
         playButton.style.display = 'flex';
-        fullscreenButton.style.display = 'flex';
+        fullscreenButton.style.display = 'block';
       }, 1500);
       
       // 播放按钮事件
@@ -278,6 +302,7 @@
             .then(() => {
               playButton.innerHTML = '❚❚';
               playTip.style.display = 'none';
+              videoCover.style.display = 'none';
             })
             .catch(error => {
               showError('播放失败: ' + error.message);
@@ -295,6 +320,7 @@
       videoElement.addEventListener('play', function() {
         playButton.innerHTML = '❚❚';
         playTip.style.display = 'none';
+        videoCover.style.display = 'none';
       });
       
       videoElement.addEventListener('pause', function() {
@@ -303,6 +329,7 @@
       
       videoElement.addEventListener('ended', function() {
         playButton.innerHTML = '▶';
+        videoCover.style.display = 'flex';
       });
       
       videoElement.addEventListener('error', function() {
@@ -318,37 +345,49 @@
         return false;
       });
       
-      // 禁用视频下载（尽可能）
-      Object.defineProperty(HTMLMediaElement.prototype, 'src', {
-        set: function(value) {
-          if (this.getAttribute('data-src-set') === 'true') {
-            return; // 已经设置过，不允许修改
-          }
-          this.setAttribute('data-src-set', 'true');
-          HTMLMediaElement.prototype.src.set.call(this, value);
-        }
-      });
+      // 监听全屏变化
+      document.addEventListener('fullscreenchange', updateFullscreenButton);
+      document.addEventListener('webkitfullscreenchange', updateFullscreenButton);
+      document.addEventListener('mozfullscreenchange', updateFullscreenButton);
+      document.addEventListener('MSFullscreenChange', updateFullscreenButton);
       
       // 全屏功能
       function toggleFullscreen() {
-        if (!document.fullscreenElement) {
-          if (videoElement.requestFullscreen) {
-            videoElement.requestFullscreen().catch(err => {
+        if (!document.fullscreenElement && !document.webkitFullscreenElement && 
+            !document.mozFullScreenElement && !document.msFullscreenElement) {
+          // 进入全屏
+          if (document.documentElement.requestFullscreen) {
+            document.documentElement.requestFullscreen().catch(err => {
               console.error('全屏错误:', err);
             });
-          } else if (videoElement.webkitRequestFullscreen) {
-            videoElement.webkitRequestFullscreen();
-          } else if (videoElement.msRequestFullscreen) {
-            videoElement.msRequestFullscreen();
+          } else if (document.documentElement.webkitRequestFullscreen) {
+            document.documentElement.webkitRequestFullscreen();
+          } else if (document.documentElement.mozRequestFullScreen) {
+            document.documentElement.mozRequestFullScreen();
+          } else if (document.documentElement.msRequestFullscreen) {
+            document.documentElement.msRequestFullscreen();
           }
         } else {
+          // 退出全屏
           if (document.exitFullscreen) {
             document.exitFullscreen();
           } else if (document.webkitExitFullscreen) {
             document.webkitExitFullscreen();
+          } else if (document.mozCancelFullScreen) {
+            document.mozCancelFullScreen();
           } else if (document.msExitFullscreen) {
             document.msExitFullscreen();
           }
+        }
+      }
+      
+      // 更新全屏按钮文本
+      function updateFullscreenButton() {
+        if (document.fullscreenElement || document.webkitFullscreenElement || 
+            document.mozFullScreenElement || document.msFullscreenElement) {
+          fullscreenButton.textContent = '竖屏播放';
+        } else {
+          fullscreenButton.textContent = '全屏播放';
         }
       }
       
