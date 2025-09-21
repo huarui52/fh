@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>百草珍酿222学习课</title>
+  <title>百草珍酿学习课</title>
   <style>
     * {
       margin: 0;
@@ -233,10 +233,23 @@
       display: flex;
       justify-content: center;
       align-items: center;
-      background-image: url('https://img20.360buyimg.com/openfeedback/jfs/t1/326035/11/22691/203078/68cfa87cF3130407d/9aaa93b2b84e2941.jpg');
       background-size: cover;
       background-position: center;
       background-repeat: no-repeat;
+    }
+    
+    /* 封面标题 */
+    .cover-title {
+      position: absolute;
+      bottom: 100px;
+      left: 0;
+      width: 100%;
+      text-align: center;
+      color: white;
+      font-size: 24px;
+      font-weight: bold;
+      text-shadow: 2px 2px 8px rgba(0, 0, 0, 0.8);
+      padding: 0 20px;
     }
     
     /* 点击区域 */
@@ -305,7 +318,9 @@
   </div>
   
   <!-- 视频封面 -->
-  <div class="video-cover" id="videoCover"></div>
+  <div class="video-cover" id="videoCover">
+    <div class="cover-title">百草珍酿学习课程</div>
+  </div>
   
   <!-- 点击区域 -->
   <div class="click-area" id="clickArea"></div>
@@ -351,6 +366,36 @@
       let isPlaying = false;
       let progressTimer = null;
       let hideControlsTimer = null;
+      
+      // 设置封面图片 - 使用多个备选URL
+      const coverImages = [
+        'https://img20.360buyimg.com/openfeedback/jfs/t1/326035/11/22691/203078/68cfa87cF3130407d/9aaa93b2b84e2941.jpg',
+        'https://via.placeholder.com/800x450/333333/ffffff?text=百草珍酿学习课程',
+        'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="800" height="450" viewBox="0 0 800 450"><rect width="800" height="450" fill="%23333"/><text x="400" y="225" font-family="Arial" font-size="30" fill="white" text-anchor="middle">百草珍酿学习课程</text></svg>'
+      ];
+      
+      // 加载封面图片
+      let currentCoverIndex = 0;
+      const coverImage = new Image();
+      
+      coverImage.onload = function() {
+        videoCover.style.backgroundImage = `url('${coverImages[currentCoverIndex]}')`;
+        console.log('封面图片加载成功');
+      };
+      
+      coverImage.onerror = function() {
+        console.error('封面图片加载失败，尝试备用图片');
+        currentCoverIndex++;
+        if (currentCoverIndex < coverImages.length) {
+          coverImage.src = coverImages[currentCoverIndex];
+        } else {
+          console.error('所有封面图片加载失败');
+          videoCover.style.backgroundColor = '#333';
+        }
+      };
+      
+      // 开始加载第一张封面图片
+      coverImage.src = coverImages[currentCoverIndex];
       
       // 初始状态：显示封面
       videoCover.style.display = 'flex';
