@@ -1,4 +1,3 @@
-<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
   <meta charset="UTF-8">
@@ -10,10 +9,21 @@
   <meta content="true" name="HandheldFriendly">
   <meta name="mobile-web-app-capable" content="yes">
 
-  <title>百草珍酿学习课1</title>
+  <!-- Open Graph 协议标签 - 微信分享卡片用 -->
+  <meta property="og:title" content="百草珍酿" />
+  <meta property="og:description" content="邀请您一起来学习" />
+  <meta property="og:image" content="https://m.360buyimg.com/i/jfs/t1/307252/25/16806/3963/68751929Fe9835238/cd51d524746c2785.jpg" />
+  <meta property="og:type" content="website" />
+  <meta property="og:url" id="og-url" content="" />
+  <meta property="og:site_name" content="百草珍酿" />
+
+  <!-- 微信特定标签（可选） -->
+  <meta property="wechat:miniprogram" content="" />
+  <meta property="wechat:miniprogram_image" content="" />
+
+  <title>百草珍酿学习2课</title>
 
   <style>
-    /* 加载动画 */
     .container {
       width: 100px;
       height: 100px;
@@ -86,213 +96,520 @@
       100% { transform: translate(-50%, -50%) rotate(360deg) }
     }
     
-    /* 视频容器样式 */
-    .video-container {
+    .content {
+      height:100%;
+      width:100%;
+      position: fixed;
+      left: 0;
+      top: 0;
+      border: none;
+      background: #000;
+      -webkit-overflow-scrolling: touch;
+      overflow: auto;
+      z-index: 2;
+    }
+    
+    /* 全屏相关样式 */
+    :-webkit-full-screen .content {
+      width: 100% !important;
+      height: 100% !important;
+    }
+    
+    :-moz-full-screen .content {
+      width: 100% !important;
+      height: 100% !important;
+    }
+    
+    :-ms-fullscreen .content {
+      width: 100% !important;
+      height: 100% !important;
+    }
+    
+    :fullscreen .content {
+      width: 100% !important;
+      height: 100% !important;
+    }
+    
+    /* 隐藏视频播放器的倍速控制 */
+    video::-webkit-media-controls-playback-rate-button {
+      display: none !important;
+    }
+    
+    /* 自定义全屏按钮 - 修改位置和大小 */
+    .fullscreen-button {
+      position: fixed;
+      right: 15px; /* 改为右侧 */
+      bottom: 15px;
+      z-index: 9999;
+      background: rgba(0, 0, 0, 0.5);
+      color: white;
+      border: none;
+      border-radius: 4px;
+      padding: 10px 15px; /* 增加内边距 */
+      font-size: 16px; /* 增大字体大小 */
+      cursor: pointer;
+      display: none;
+    }
+    
+    /* 横屏模式样式 */
+    .landscape-mode {
+      transform: rotate(90deg);
+      transform-origin: center center;
+      width: 100vh;
+      height: 100vw;
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      margin-top: -50vw;
+      margin-left: -50vh;
+    }
+    
+    /* 横屏模式下的iframe */
+    .landscape-mode iframe {
+      width: 100vh !important;
+      height: 100vw !important;
+    }
+    
+    /* 新增：播放提示文字样式 */
+    .play-tip {
+      position: fixed;
+      bottom: 70px;
+      left: 0;
+      right: 0;
+      text-align: center;
+      color: white;
+      font-size: 18px;
+      text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.8);
+      z-index: 9998;
+      display: none;
+      animation: fadeInOut 2s infinite;
+    }
+    
+    @keyframes fadeInOut {
+      0% { opacity: 0.7; }
+      50% { opacity: 1; }
+      100% { opacity: 0.7; }
+    }
+    
+    /* 自定义视频播放器样式 */
+    .custom-video-player {
       position: fixed;
       top: 0;
       left: 0;
       width: 100%;
       height: 100%;
       background: #000;
-      z-index: 2;
+      z-index: 10;
       display: none;
     }
     
-    #videoPlayer {
+    .custom-video-player video {
       width: 100%;
       height: 100%;
       object-fit: contain;
     }
     
-    /* 控制栏样式 */
-    .controls-container {
-      position: fixed;
+    .custom-controls {
+      position: absolute;
       bottom: 0;
       left: 0;
-      width: 100%;
-      background: linear-gradient(to top, rgba(0,0,0,0.7), transparent);
+      right: 0;
+      background: linear-gradient(transparent, rgba(0,0,0,0.7));
       padding: 15px;
       display: flex;
-      justify-content: space-between;
       align-items: center;
-      z-index: 3;
+      justify-content: center;
       opacity: 0;
       transition: opacity 0.3s;
     }
     
-    .video-container:hover .controls-container {
+    .custom-video-player:hover .custom-controls {
       opacity: 1;
     }
     
-    /* 音量控制样式 */
-    .volume-control {
-      display: flex;
-      align-items: center;
-    }
-    
-    .volume-btn {
-      background: none;
-      border: none;
+    .play-pause-btn {
+      background: rgba(0, 0, 0, 0.5);
       color: white;
-      font-size: 20px;
-      cursor: pointer;
-      margin-right: 10px;
-    }
-    
-    .volume-slider {
-      width: 80px;
-      height: 5px;
-      -webkit-appearance: none;
-      background: rgba(255, 255, 255, 0.3);
-      border-radius: 5px;
-      outline: none;
-    }
-    
-    .volume-slider::-webkit-slider-thumb {
-      -webkit-appearance: none;
-      width: 15px;
-      height: 15px;
+      border: none;
       border-radius: 50%;
-      background: white;
+      width: 40px;
+      height: 40px;
+      font-size: 18px;
       cursor: pointer;
-    }
-    
-    /* 全屏按钮样式 */
-    .fullscreen-btn {
-      background: none;
-      border: none;
-      color: white;
-      font-size: 20px;
-      cursor: pointer;
+      margin: 0 10px;
     }
   </style>
+
+  <!-- 动态设置og:url为当前页面URL -->
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      document.getElementById('og-url').content = window.location.href;
+    });
+  </script>
 </head>
 
 <body>
-  <!-- 加载动画 -->
   <div class="container">
     <div class="dot dot-1"></div>
     <div class="dot dot-2"></div>
     <div class="dot dot-3"></div>
   </div>
   
-  <!-- 视频容器 -->
-  <div class="video-container" id="videoContainer">
-    <video id="videoPlayer" playsinline></video>
-    
-    <!-- 控制栏 -->
-    <div class="controls-container">
-      <div class="volume-control">
-        <button class="volume-btn" id="volumeBtn">🔊</button>
-        <input type="range" class="volume-slider" id="volumeSlider" min="0" max="1" step="0.1" value="1">
-      </div>
-      
-      <button class="fullscreen-btn" id="fullscreenBtn">⛶</button>
+  <!-- 新增：播放提示文字 -->
+  <div class="play-tip" id="playTip">请点击下面播放键开始学习</div>
+  
+  <button class="fullscreen-button" id="fullscreenBtn">全屏播放</button>
+  
+  <!-- 新增：自定义视频播放器 -->
+  <div class="custom-video-player" id="customPlayer">
+    <video id="videoElement" playsinline webkit-playsinline></video>
+    <div class="custom-controls">
+      <button class="play-pause-btn" id="playPauseBtn">▶</button>
     </div>
   </div>
 
   <script>
-    // 获取URL参数
     var urlParams = new URLSearchParams(window.location.search);
     var encodedParam = urlParams.get('c');
+    var tureurl = atob(encodedParam);
     
-    if (encodedParam) {
-      var trueurl = atob(encodedParam);
-      
-      // 隐藏加载动画并显示视频容器
+    // 获取DOM元素
+    var fullscreenBtn = document.getElementById('fullscreenBtn');
+    var playTip = document.getElementById('playTip');
+    var customPlayer = document.getElementById('customPlayer');
+    var videoElement = document.getElementById('videoElement');
+    var playPauseBtn = document.getElementById('playPauseBtn');
+    var isLandscapeMode = false;
+    var isMP4 = false;
+    
+    // 检查URL是否为MP4直链
+    if (tureurl && tureurl.toLowerCase().endsWith('.mp4')) {
+      isMP4 = true;
+    }
+    
+    if (tureurl.includes("http")) {
+      var square = document.querySelector(".container");
       setTimeout(function() {
-        document.querySelector(".container").style.display = "none";
-        document.getElementById("videoContainer").style.display = "block";
-        
-        // 设置视频源
-        var videoPlayer = document.getElementById("videoPlayer");
-        videoPlayer.src = trueurl;
-        
-        // 自动播放视频
-        videoPlayer.play().catch(function(error) {
-          console.log('自动播放失败:', error);
-        });
-        
-        console.log("视频URL:", trueurl);
+        square.style.display = "none";
       }, 1500);
       
-      // 音量控制
-      var volumeBtn = document.getElementById("volumeBtn");
-      var volumeSlider = document.getElementById("volumeSlider");
-      var videoPlayer = document.getElementById("videoPlayer");
-      
-      // 初始化音量
-      videoPlayer.volume = 1;
-      
-      // 音量滑块事件
-      volumeSlider.addEventListener('input', function() {
-        videoPlayer.volume = this.value;
-        updateVolumeIcon();
-      });
-      
-      // 音量按钮事件
-      volumeBtn.addEventListener('click', function() {
-        if (videoPlayer.volume > 0) {
-          videoPlayer.volume = 0;
-          volumeSlider.value = 0;
-        } else {
-          videoPlayer.volume = 1;
-          volumeSlider.value = 1;
-        }
-        updateVolumeIcon();
-      });
-      
-      // 更新音量图标
-      function updateVolumeIcon() {
-        if (videoPlayer.volume == 0) {
-          volumeBtn.textContent = '🔇';
-        } else if (videoPlayer.volume < 0.5) {
-          volumeBtn.textContent = '🔈';
-        } else {
-          volumeBtn.textContent = '🔊';
-        }
+      if (isMP4) {
+        // 使用自定义播放器处理MP4直链
+        setupCustomVideoPlayer();
+      } else {
+        // 原有iframe处理逻辑
+        setupIframePlayer();
       }
       
-      // 全屏功能
-      var fullscreenBtn = document.getElementById("fullscreenBtn");
-      var videoContainer = document.getElementById("videoContainer");
+      // 显示播放提示
+      playTip.style.display = 'block';
       
-      fullscreenBtn.addEventListener('click', function() {
-        if (!document.fullscreenElement) {
-          if (videoContainer.requestFullscreen) {
-            videoContainer.requestFullscreen();
-          } else if (videoContainer.webkitRequestFullscreen) {
-            videoContainer.webkitRequestFullscreen();
-          } else if (videoContainer.msRequestFullscreen) {
-            videoContainer.msRequestFullscreen();
-          }
-        } else {
-          if (document.exitFullscreen) {
-            document.exitFullscreen();
-          } else if (document.webkitExitFullscreen) {
-            document.webkitExitFullscreen();
-          } else if (document.msExitFullscreen) {
-            document.msExitFullscreen();
-          }
-        }
-      });
-      
-      // 监听全屏变化
-      document.addEventListener('fullscreenchange', updateFullscreenButton);
-      document.addEventListener('webkitfullscreenchange', updateFullscreenButton);
-      document.addEventListener('msfullscreenchange', updateFullscreenButton);
-      
-      function updateFullscreenButton() {
-        if (document.fullscreenElement || 
-            document.webkitFullscreenElement || 
-            document.msFullscreenElement) {
-          fullscreenBtn.textContent = '⛶';
-        } else {
-          fullscreenBtn.textContent = '⛶';
-        }
-      }
     } else {
-      console.log("没有找到视频URL参数");
+      console.log("nourls");
+    }
+    
+    // 设置自定义视频播放器
+    function setupCustomVideoPlayer() {
+      // 隐藏全屏按钮（自定义播放器有自己的全屏控制）
+      fullscreenBtn.style.display = 'none';
+      
+      // 设置视频源
+      videoElement.src = tureurl;
+      
+      // 显示自定义播放器
+      customPlayer.style.display = 'block';
+      
+      // 自动开始播放
+      var playPromise = videoElement.play();
+      
+      if (playPromise !== undefined) {
+        playPromise.catch(error => {
+          // 自动播放被阻止，显示播放按钮
+          console.log('自动播放被阻止，需要用户交互');
+        });
+      }
+      
+      // 播放/暂停按钮事件
+      playPauseBtn.addEventListener('click', function() {
+        if (videoElement.paused) {
+          videoElement.play();
+          playPauseBtn.textContent = '❚❚';
+        } else {
+          videoElement.pause();
+          playPauseBtn.textContent = '▶';
+        }
+      });
+      
+      // 视频播放状态更新
+      videoElement.addEventListener('play', function() {
+        playPauseBtn.textContent = '❚❚';
+        // 隐藏播放提示
+        playTip.style.display = 'none';
+      });
+      
+      videoElement.addEventListener('pause', function() {
+        playPauseBtn.textContent = '▶';
+      });
+      
+      // 双击切换全屏
+      videoElement.addEventListener('dblclick', function() {
+        toggleFullscreen();
+      });
+      
+      // 右键菜单禁用
+      videoElement.addEventListener('contextmenu', function(e) {
+        e.preventDefault();
+        return false;
+      });
+      
+      // 隐藏默认控制条（iOS）
+      videoElement.setAttribute('controls', 'false');
+      
+      console.log('使用自定义播放器播放MP4: ' + tureurl);
+    }
+    
+    // 设置iframe播放器
+    function setupIframePlayer() {
+      var iframe = document.createElement('iframe');
+      iframe.className = 'content';
+      iframe.setAttribute('allowfullscreen', '');
+      iframe.setAttribute('webkitallowfullscreen', '');
+      iframe.setAttribute('mozallowfullscreen', '');
+      iframe.setAttribute('allow', 'autoplay; fullscreen; accelerometer; gyroscope');
+      iframe.setAttribute('scrolling', 'no');
+      iframe.setAttribute('frameborder', '0');
+      
+      // 更强大的样式注入方案
+      iframe.onload = function() {
+        // 显示全屏按钮
+        fullscreenBtn.style.display = 'block';
+        
+        try {
+          // 主样式注入
+          var style = document.createElement('style');
+          style.textContent = `
+            /* 隐藏所有非视频元素 */
+            body *:not(video):not(iframe):not(object):not(embed) {
+              display: none !important;
+              visibility: hidden !important;
+              height: 0 !important;
+              width: 0 !important;
+              opacity: 0 !important;
+              padding: 0 !important;
+              margin: 0 !important;
+              position: absolute !important;
+              clip: rect(0 0 0 0) !important;
+              overflow: hidden !important;
+            }
+            
+            /* 确保视频全屏 */
+            video, iframe, object, embed {
+              position: fixed !important;
+              top: 0 !important;
+              left: 0 !important;
+              width: 100% !important;
+              height: 100% !important;
+              z-index: 999999 !important;
+            }
+            
+            /* 重置body和html */
+            body, html {
+              padding: 0 !important;
+              margin: 0 !important;
+              overflow: hidden !important;
+              background: black !important;
+              height: 100% !important;
+              width: 100% !important;
+            }
+            
+            /* 隐藏播放器控制条中的倍速按钮 */
+            .vjs-playback-rate, 
+            [class*="speed-control"], 
+            [class*="rate-control"],
+            .plyr__menu__container [data-plyr="speed"],
+            [data-testid="player-controls"] [aria-label*="speed"],
+            [aria-label*="playback rate"] {
+              display: none !important;
+            }
+            
+            /* 隐藏广告和叠加层 */
+            .ad-container, .ad, [class*="ad-"], 
+            .overlay, .popup, .modal,
+            [id*="ad"], [id*="Ad"] {
+              display: none !important;
+            }
+          `;
+          
+          try {
+            // 尝试直接注入
+            iframe.contentDocument.head.appendChild(style);
+          } catch(e) {
+            console.log('直接注入CSS失败:', e);
+            // 备用方案：通过JavaScript查找并隐藏元素
+            try {
+              var script = document.createElement('script');
+              script.textContent = `
+                // 隐藏所有非视频元素
+                function hideNonVideoElements() {
+                  var allElements = document.querySelectorAll('body *:not(video):not(iframe):not(object):not(embed)');
+                  allElements.forEach(function(el) {
+                    el.style.display = 'none';
+                    el.style.visibility = 'hidden';
+                    el.style.height = '0';
+                    el.style.width = '0';
+                  });
+                  
+                  // 确保视频全屏
+                  var videos = document.querySelectorAll('video, iframe, object, embed');
+                  videos.forEach(function(video) {
+                    video.style.position = 'fixed';
+                    video.style.top = '0';
+                    video.style.left = '0';
+                    video.style.width = '100%';
+                    video.style.height = '100%';
+                    video.style.zIndex = '999999';
+                  });
+                  
+                  // 重置body样式
+                  document.body.style.padding = '0';
+                  document.body.style.margin = '0';
+                  document.body.style.overflow = 'hidden';
+                  document.body.style.background = 'black';
+                }
+                
+                // 初始执行
+                hideNonVideoElements();
+                
+                // 监听DOM变化以防动态加载内容
+                var observer = new MutationObserver(hideNonVideoElements);
+                observer.observe(document.body, {
+                  childList: true,
+                  subtree: true
+                });
+                
+                // 定期检查以防遗漏
+                setInterval(hideNonVideoElements, 1000);
+              `;
+              iframe.contentDocument.head.appendChild(script);
+            } catch(e) {
+              console.log('JS注入也失败:', e);
+            }
+          }
+          
+        } catch(e) {
+          console.log('样式注入出错:', e);
+        }
+      };
+      
+      iframe.src = tureurl;
+      document.body.appendChild(iframe);
+      console.log(tureurl);
+      
+      // 添加全屏按钮事件监听
+      fullscreenBtn.addEventListener('click', toggleLandscapeMode);
+      
+      // 监听屏幕方向变化
+      if (screen.orientation) {
+        screen.orientation.addEventListener('change', function() {
+          if (screen.orientation.type.includes('landscape')) {
+            document.body.classList.add('landscape-mode');
+            fullscreenBtn.textContent = '退出全屏';
+          } else {
+            document.body.classList.remove('landscape-mode');
+            fullscreenBtn.textContent = '全屏播放';
+          }
+        });
+      }
+    }
+    
+    // 横屏全屏功能
+    function toggleFullscreen() {
+      if (!isLandscapeMode) {
+        // 进入横屏模式
+        if (customPlayer.requestFullscreen) {
+          customPlayer.requestFullscreen().then(function() {
+            if (screen.orientation && screen.orientation.lock) {
+              screen.orientation.lock('landscape').catch(function(error) {
+                console.log('锁定横屏失败:', error);
+              });
+            }
+          });
+        } else if (customPlayer.webkitRequestFullscreen) {
+          customPlayer.webkitRequestFullscreen().then(function() {
+            if (screen.orientation && screen.orientation.lock) {
+              screen.orientation.lock('landscape').catch(function(error) {
+                console.log('锁定横屏失败:', error);
+              });
+            }
+          });
+        } else if (customPlayer.msRequestFullscreen) {
+          customPlayer.msRequestFullscreen();
+        }
+        isLandscapeMode = true;
+      } else {
+        // 退出横屏模式
+        if (document.exitFullscreen) {
+          document.exitFullscreen().then(function() {
+            if (screen.orientation && screen.orientation.unlock) {
+              screen.orientation.unlock();
+            }
+          });
+        } else if (document.webkitExitFullscreen) {
+          document.webkitExitFullscreen().then(function() {
+            if (screen.orientation && screen.orientation.unlock) {
+              screen.orientation.unlock();
+            }
+          });
+        } else if (document.msExitFullscreen) {
+          document.msExitFullscreen();
+        }
+        isLandscapeMode = false;
+      }
+    }
+
+    function injectStyleThroughPostMessage(iframe) {
+      var styleContent = `
+        header, .header, #header, .navbar, .logo, .login-btn {
+          display: none !important;
+        }
+        body { padding-top: 0 !important; }
+        .vjs-playback-rate, [class*="speed-control"] { display: none !important; }
+      `;
+      
+      var retryCount = 0;
+      var retryInterval = setInterval(function() {
+        try {
+          iframe.contentWindow.postMessage({
+            type: 'injectStyle',
+            css: styleContent
+          }, '*');
+          
+          retryCount++;
+          if(retryCount > 5) clearInterval(retryInterval);
+        } catch(e) {
+          console.log('postMessage失败:', e);
+        }
+      }, 1000);
+    }
+
+    window.addEventListener('message', function(event) {
+      console.log('收到消息:', event.data);
+    });
+
+    var firefox = navigator.userAgent.indexOf('Firefox') != -1;
+    function MouseWheel(e, doc) {
+      e.preventDefault && e.preventDefault(), e.returnValue = false;
+      var up = firefox && e.detail < 0 || e.wheelDelta > 0;
+      doc.body.scrollTop = doc.documentElement.scrollTop += up ? -50 : 50;
+    }
+    function bindMouseWhee(ifr) {
+      try {
+        var doc = ifr.contentWindow.document;
+        firefox ? doc.addEventListener('DOMMouseScroll', function(e) { MouseWheel(e, doc) }, false) 
+                : (doc.onmousewheel = function(e) { MouseWheel(e || ifr.contentWindow.event, doc) });
+      } catch(e) {
+        console.log('跨域无法获取iframe加载document' + e);
+      }
     }
   </script>
 </body>
