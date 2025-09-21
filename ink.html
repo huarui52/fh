@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>百草珍酿学习课</title>
+  <title>百草珍酿学习43课</title>
   <style>
     * {
       margin: 0;
@@ -221,35 +221,25 @@
       display: none;
     }
     
-    /* 视频封面 */
+    /* 视频封面 - 关键修改：添加默认背景色+加载状态，确保不黑屏 */
     .video-cover {
       position: fixed;
       top: 0;
       left: 0;
       width: 100%;
       height: 100%;
-      background: #000;
+      background: #222; /* 非纯黑默认色，避免黑屏感 */
       z-index: 85;
       display: flex;
       justify-content: center;
       align-items: center;
+      /* 封面图加载策略：先显示默认色，图片加载完成后覆盖 */
+      background-image: url('https://img20.360buyimg.com/openfeedback/jfs/t1/326035/11/22691/203078/68cfa87cF3130407d/9aaa93b2b84e2941.jpg');
       background-size: cover;
       background-position: center;
       background-repeat: no-repeat;
-    }
-    
-    /* 封面标题 */
-    .cover-title {
-      position: absolute;
-      bottom: 100px;
-      left: 0;
-      width: 100%;
-      text-align: center;
-      color: white;
-      font-size: 24px;
-      font-weight: bold;
-      text-shadow: 2px 2px 8px rgba(0, 0, 0, 0.8);
-      padding: 0 20px;
+      /* 添加加载过渡效果 */
+      transition: background-image 0.3s ease;
     }
     
     /* 点击区域 */
@@ -318,9 +308,7 @@
   </div>
   
   <!-- 视频封面 -->
-  <div class="video-cover" id="videoCover">
-    <div class="cover-title">百草珍酿学习课程</div>
-  </div>
+  <div class="video-cover" id="videoCover"></div>
   
   <!-- 点击区域 -->
   <div class="click-area" id="clickArea"></div>
@@ -366,39 +354,28 @@
       let isPlaying = false;
       let progressTimer = null;
       let hideControlsTimer = null;
+      // 封面图片URL（便于修改和故障处理）
+      const coverImageUrl = 'https://img20.360buyimg.com/openfeedback/jfs/t1/326035/11/22691/203078/68cfa87cF3130407d/9aaa93b2b84e2941.jpg';
+      // 封面加载失败时的备用图（可选，避免封面图失效导致黑屏）
+      const fallbackCoverUrl = 'https://via.placeholder.com/1280x720?text=百草珍酿学习课';
       
-      // 设置封面图片 - 使用多个备选URL
-      const coverImages = [
-        'https://img20.360buyimg.com/openfeedback/jfs/t1/326035/11/22691/203078/68cfa87cF3130407d/9aaa93b2b84e2941.jpg',
-        'https://via.placeholder.com/800x450/333333/ffffff?text=百草珍酿学习课程',
-        'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="800" height="450" viewBox="0 0 800 450"><rect width="800" height="450" fill="%23333"/><text x="400" y="225" font-family="Arial" font-size="30" fill="white" text-anchor="middle">百草珍酿学习课程</text></svg>'
-      ];
+      // -------------------------- 关键修改1：封面图片预加载 + 失败降级 --------------------------
+      // 预加载封面图，确保加载完成后再显示，避免黑屏
+      const coverImg = new Image();
+      coverImg.src = coverImageUrl;
       
-      // 加载封面图片
-      let currentCoverIndex = 0;
-      const coverImage = new Image();
-      
-      coverImage.onload = function() {
-        videoCover.style.backgroundImage = `url('${coverImages[currentCoverIndex]}')`;
-        console.log('封面图片加载成功');
+      // 封面图加载成功
+      coverImg.onload = function() {
+        videoCover.style.backgroundImage = `url('${coverImageUrl}')`;
+        videoCover.style.display = 'flex'; // 图片加载成功后显示封面
       };
       
-      coverImage.onerror = function() {
-        console.error('封面图片加载失败，尝试备用图片');
-        currentCoverIndex++;
-        if (currentCoverIndex < coverImages.length) {
-          coverImage.src = coverImages[currentCoverIndex];
-        } else {
-          console.error('所有封面图片加载失败');
-          videoCover.style.backgroundColor = '#333';
-        }
+      // 封面图加载失败（备用图降级）
+      coverImg.onerror = function() {
+        console.warn('封面图加载失败，使用备用图');
+        videoCover.style.backgroundImage = `url('${fallbackCoverUrl}')`;
+        videoCover.style.display = 'flex'; // 备用图生效后显示封面
       };
-      
-      // 开始加载第一张封面图片
-      coverImage.src = coverImages[currentCoverIndex];
-      
-      // 初始状态：显示封面
-      videoCover.style.display = 'flex';
       
       // 获取URL参数
       const urlParams = new URLSearchParams(window.location.search);
@@ -426,7 +403,8 @@
       // 设置视频源
       videoElement.src = videoUrl;
       
-      // 隐藏加载动画
+      // -------------------------- 关键修改2：延迟隐藏加载动画，确保封面已显示 --------------------------
+      // 等待封面图加载（至少1.5秒），避免加载动画消失后封面未显示导致黑屏
       setTimeout(() => {
         loader.style.display = 'none';
         playTip.style.display = 'block';
@@ -497,7 +475,8 @@
         isPlaying = false;
         playButton.style.display = 'flex';
         playButton.innerHTML = '▶';
-        videoCover.style.display = 'flex'; // 结束时显示封面
+        // -------------------------- 关键修改3：视频结束后立即显示封面 --------------------------
+        videoCover.style.display = 'flex'; // 结束时立即显示封面，避免黑屏
         pauseButton.style.display = 'none';
         
         // 隐藏进度条和时间显示
@@ -514,6 +493,8 @@
       
       videoElement.addEventListener('error', function() {
         showError('视频加载失败，请检查链接是否有效');
+        // 视频加载失败时保持封面显示
+        videoCover.style.display = 'flex';
       });
       
       // 双击切换全屏
@@ -545,6 +526,8 @@
             })
             .catch(error => {
               showError('播放失败: ' + error.message);
+              // 播放失败时保持封面显示
+              videoCover.style.display = 'flex';
             });
         } else {
           pauseVideo();
@@ -662,6 +645,8 @@
         loader.style.display = 'none';
         errorMessage.textContent = message;
         errorMessage.style.display = 'block';
+        // 错误状态下保持封面显示
+        videoCover.style.display = 'flex';
         console.error(message);
       }
       
