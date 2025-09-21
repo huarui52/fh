@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>百草珍酿66学习课</title>
+  <title>百草珍酿45学习课</title>
   <style>
     * {
       margin: 0;
@@ -19,6 +19,7 @@
       position: fixed;
       width: 100%;
       height: 100%;
+      touch-action: manipulation;
     }
     
     /* 加载动画 */
@@ -162,6 +163,27 @@
       transform: translate(-50%, 40px) scale(1.05);
     }
     
+    /* 暂停按钮 */
+    .pause-button {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      z-index: 98;
+      background: rgba(0, 0, 0, 0.6);
+      color: white;
+      border: 2px solid rgba(255, 255, 255, 0.7);
+      border-radius: 50%;
+      width: 80px;
+      height: 80px;
+      font-size: 36px;
+      cursor: pointer;
+      display: none;
+      justify-content: center;
+      align-items: center;
+      transition: all 0.3s;
+    }
+    
     /* 全屏按钮 - 调整：移除圆圈，改为文本按钮 */
     .fullscreen-button {
       position: fixed;
@@ -217,6 +239,17 @@
       object-fit: contain;
       opacity: 0.7;
     }
+    
+    /* 点击区域 */
+    .click-area {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 97;
+      cursor: pointer;
+    }
   </style>
 </head>
 <body>
@@ -240,8 +273,14 @@
     <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 800 450' fill='%23333'%3E%3Cpath d='M400,225 L500,175 L500,275 Z' fill='%23666'/%3E%3C/svg%3E" alt="视频封面">
   </div>
   
+  <!-- 点击区域 -->
+  <div class="click-area" id="clickArea"></div>
+  
   <!-- 播放按钮 -->
   <button class="play-button" id="playButton">▶</button>
+  
+  <!-- 暂停按钮 -->
+  <button class="pause-button" id="pauseButton">❚❚</button>
   
   <!-- 全屏按钮 -->
   <button class="fullscreen-button" id="fullscreenButton">全屏播放</button>
@@ -257,7 +296,9 @@
       const customPlayer = document.getElementById('customPlayer');
       const videoElement = document.getElementById('videoElement');
       const videoCover = document.getElementById('videoCover');
+      const clickArea = document.getElementById('clickArea');
       const playButton = document.getElementById('playButton');
+      const pauseButton = document.getElementById('pauseButton');
       const fullscreenButton = document.getElementById('fullscreenButton');
       const errorMessage = document.getElementById('errorMessage');
       
@@ -297,19 +338,24 @@
       
       // 播放按钮事件
       playButton.addEventListener('click', function() {
-        if (videoElement.paused) {
-          videoElement.play()
-            .then(() => {
-              playButton.innerHTML = '❚❚';
-              playTip.style.display = 'none';
-              videoCover.style.display = 'none';
-            })
-            .catch(error => {
-              showError('播放失败: ' + error.message);
-            });
-        } else {
-          videoElement.pause();
-          playButton.innerHTML = '▶';
+        playVideo();
+      });
+      
+      // 暂停按钮事件
+      pauseButton.addEventListener('click', function() {
+        pauseVideo();
+      });
+      
+      // 点击区域事件 - 点击屏幕暂停
+      clickArea.addEventListener('click', function() {
+        if (!videoElement.paused) {
+          pauseVideo();
+          
+          // 3秒后自动隐藏暂停按钮
+          setTimeout(() => {
+            if (!videoElement.paused) return;
+            pauseButton.style.display = 'none';
+          }, 3000);
         }
       });
       
@@ -318,18 +364,21 @@
       
       // 视频事件监听
       videoElement.addEventListener('play', function() {
-        playButton.innerHTML = '❚❚';
+        playButton.style.display = 'none';
         playTip.style.display = 'none';
         videoCover.style.display = 'none';
       });
       
       videoElement.addEventListener('pause', function() {
-        playButton.innerHTML = '▶';
+        // 显示暂停按钮
+        pauseButton.style.display = 'flex';
       });
       
       videoElement.addEventListener('ended', function() {
+        playButton.style.display = 'flex';
         playButton.innerHTML = '▶';
         videoCover.style.display = 'flex';
+        pauseButton.style.display = 'none';
       });
       
       videoElement.addEventListener('error', function() {
@@ -344,6 +393,26 @@
         e.preventDefault();
         return false;
       });
+      
+      // 播放视频函数
+      function playVideo() {
+        videoElement.play()
+          .then(() => {
+            playButton.style.display = 'none';
+            playTip.style.display = 'none';
+            videoCover.style.display = 'none';
+            pauseButton.style.display = 'none';
+          })
+          .catch(error => {
+            showError('播放失败: ' + error.message);
+          });
+      }
+      
+      // 暂停视频函数
+      function pauseVideo() {
+        videoElement.pause();
+        pauseButton.style.display = 'flex';
+      }
       
       // 监听全屏变化
       document.addEventListener('fullscreenchange', updateFullscreenButton);
