@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>百草珍酿45学习课</title>
+  <title>百草珍酿学习96课</title>
   <style>
     * {
       margin: 0;
@@ -250,6 +250,40 @@
       z-index: 97;
       cursor: pointer;
     }
+    
+    /* 进度条容器 */
+    .progress-container {
+      position: fixed;
+      bottom: 70px;
+      left: 20px;
+      right: 20px;
+      height: 5px;
+      background: rgba(255, 255, 255, 0.2);
+      border-radius: 5px;
+      z-index: 98;
+      display: none;
+    }
+    
+    /* 进度条 */
+    .progress-bar {
+      height: 100%;
+      background: #f74d75;
+      border-radius: 5px;
+      width: 0%;
+      transition: width 0.2s;
+      pointer-events: none;
+    }
+    
+    /* 时间显示 */
+    .time-display {
+      position: fixed;
+      bottom: 50px;
+      left: 20px;
+      font-size: 12px;
+      color: rgba(255, 255, 255, 0.8);
+      z-index: 98;
+      display: none;
+    }
   </style>
 </head>
 <body>
@@ -276,6 +310,14 @@
   <!-- 点击区域 -->
   <div class="click-area" id="clickArea"></div>
   
+  <!-- 进度条 -->
+  <div class="progress-container" id="progressContainer">
+    <div class="progress-bar" id="progressBar"></div>
+  </div>
+  
+  <!-- 时间显示 -->
+  <div class="time-display" id="timeDisplay">00:00 / 00:00</div>
+  
   <!-- 播放按钮 -->
   <button class="play-button" id="playButton">▶</button>
   
@@ -301,6 +343,13 @@
       const pauseButton = document.getElementById('pauseButton');
       const fullscreenButton = document.getElementById('fullscreenButton');
       const errorMessage = document.getElementById('errorMessage');
+      const progressContainer = document.getElementById('progressContainer');
+      const progressBar = document.getElementById('progressBar');
+      const timeDisplay = document.getElementById('timeDisplay');
+      
+      // 播放状态控制
+      let isPlaying = false;
+      let progressTimer = null;
       
       // 获取URL参数
       const urlParams = new URLSearchParams(window.location.search);
@@ -343,19 +392,15 @@
       
       // 暂停按钮事件
       pauseButton.addEventListener('click', function() {
-        pauseVideo();
+        playVideo();
       });
       
-      // 点击区域事件 - 点击屏幕暂停
+      // 点击区域事件 - 点击屏幕暂停/播放
       clickArea.addEventListener('click', function() {
-        if (!videoElement.paused) {
+        if (isPlaying) {
           pauseVideo();
-          
-          // 3秒后自动隐藏暂停按钮
-          setTimeout(() => {
-            if (!videoElement.paused) return;
-            pauseButton.style.display = 'none';
-          }, 3000);
+        } else {
+          playVideo();
         }
       });
       
@@ -364,21 +409,41 @@
       
       // 视频事件监听
       videoElement.addEventListener('play', function() {
+        isPlaying = true;
         playButton.style.display = 'none';
         playTip.style.display = 'none';
         videoCover.style.display = 'none';
+        pauseButton.style.display = 'none';
+        progressContainer.style.display = 'block';
+        timeDisplay.style.display = 'block';
+        
+        // 开始更新进度
+        startProgressUpdate();
       });
       
       videoElement.addEventListener('pause', function() {
-        // 显示暂停按钮
+        isPlaying = false;
         pauseButton.style.display = 'flex';
+        
+        // 停止更新进度
+        stopProgressUpdate();
       });
       
       videoElement.addEventListener('ended', function() {
+        isPlaying = false;
         playButton.style.display = 'flex';
         playButton.innerHTML = '▶';
         videoCover.style.display = 'flex';
         pauseButton.style.display = 'none';
+        progressContainer.style.display = 'none';
+        timeDisplay.style.display = 'none';
+        
+        // 停止更新进度
+        stopProgressUpdate();
+      });
+      
+      videoElement.addEventListener('timeupdate', function() {
+        updateProgress();
       });
       
       videoElement.addEventListener('error', function() {
@@ -396,22 +461,74 @@
       
       // 播放视频函数
       function playVideo() {
-        videoElement.play()
-          .then(() => {
-            playButton.style.display = 'none';
-            playTip.style.display = 'none';
-            videoCover.style.display = 'none';
-            pauseButton.style.display = 'none';
-          })
-          .catch(error => {
-            showError('播放失败: ' + error.message);
-          });
+        if (videoElement.paused) {
+          videoElement.play()
+            .then(() => {
+              isPlaying = true;
+              playButton.style.display = 'none';
+              playTip.style.display = 'none';
+              videoCover.style.display = 'none';
+              pauseButton.style.display = 'none';
+              progressContainer.style.display = 'block';
+              timeDisplay.style.display = 'block';
+              
+              // 开始更新进度
+              startProgressUpdate();
+            })
+            .catch(error => {
+              showError('播放失败: ' + error.message);
+            });
+        } else {
+          pauseVideo();
+        }
       }
       
       // 暂停视频函数
       function pauseVideo() {
         videoElement.pause();
+        isPlaying = false;
         pauseButton.style.display = 'flex';
+        
+        // 停止更新进度
+        stopProgressUpdate();
+      }
+      
+      // 开始更新进度
+      function startProgressUpdate() {
+        progressTimer = setInterval(updateProgress, 200);
+      }
+      
+      // 停止更新进度
+      function stopProgressUpdate() {
+        if (progressTimer) {
+          clearInterval(progressTimer);
+          progressTimer = null;
+        }
+      }
+      
+      // 更新进度条
+      function updateProgress() {
+        if (videoElement.duration) {
+          const percent = (videoElement.currentTime / videoElement.duration) * 100;
+          progressBar.style.width = percent + '%';
+          
+          // 更新时间显示
+          updateTimeDisplay();
+        }
+      }
+      
+      // 更新时间显示
+      function updateTimeDisplay() {
+        const currentTime = formatTime(videoElement.currentTime);
+        const duration = formatTime(videoElement.duration);
+        timeDisplay.textContent = `${currentTime} / ${duration}`;
+      }
+      
+      // 格式化时间
+      function formatTime(seconds) {
+        const mins = Math.floor(seconds / 60);
+        const secs = Math.floor(seconds % 60);
+        return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
       }
       
       // 监听全屏变化
