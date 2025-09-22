@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>百草珍酿学习课</title>
+  <title>百草珍酿学习课1</title>
   <style>
     * {
       margin: 0;
@@ -336,7 +336,7 @@
   
   <!-- 自定义视频播放器 -->
   <div class="custom-player" id="customPlayer">
-    <video id="videoElement" playsinline webkit-playsinline></video>
+    <video id="videoElement" playsinline webkit-playsinline preload="auto"></video>
   </div>
   
   <!-- 视频封面 -->
@@ -392,6 +392,7 @@
       let hideControlsTimer = null;
       let countdownTimer = null;
       let countdownValue = 3;
+      let isVideoLoaded = false;
       
       // 显示缓冲提示
       bufferingTip.style.display = 'block';
@@ -419,11 +420,26 @@
         return;
       }
       
-      // 设置视频源
+      // 设置视频源并开始预加载
       videoElement.src = videoUrl;
+      videoElement.preload = "auto"; // 确保视频预加载
       
       // 开始缓冲视频
       videoElement.load();
+      
+      // 监听视频加载进度
+      videoElement.addEventListener('progress', function() {
+        // 检查视频是否已经有足够的数据可以播放
+        if (videoElement.buffered.length > 0 && videoElement.buffered.end(0) > 5) {
+          isVideoLoaded = true;
+        }
+      });
+      
+      // 监听视频可以播放事件
+      videoElement.addEventListener('canplay', function() {
+        isVideoLoaded = true;
+        console.log('视频已加载，可以播放');
+      });
       
       // 开始倒计时
       startCountdown();
@@ -452,6 +468,13 @@
         playButton.style.display = 'flex';
         fullscreenButton.style.display = 'block';
         clickArea.style.display = 'block';
+        
+        // 如果视频已经加载完成，直接显示播放按钮
+        if (isVideoLoaded) {
+          console.log('视频已预加载完成，点击即可播放');
+        } else {
+          console.log('视频仍在加载中...');
+        }
       }
       
       // 播放按钮事件
@@ -691,7 +714,3 @@
   </script>
 </body>
 </html>
-
-
-
-
