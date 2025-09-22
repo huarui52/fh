@@ -132,10 +132,10 @@
       margin-top: 10px;
     }
     
-    /* 播放提示 - 向上移动 */
+    /* 播放提示 - 继续向上移动 */
     .play-tip {
       position: fixed;
-      top: 35%; /* 向上移动 */
+      top: 25%; /* 继续向上移动 */
       left: 50%;
       transform: translate(-50%, -50%);
       text-align: center;
@@ -156,12 +156,12 @@
       100% { opacity: 0.7; }
     }
     
-    /* 新增提示文字 - 向下移动 */
+    /* 新增提示文字 - 向下移动到底部 */
     .additional-tip {
       position: fixed;
-      top: 65%; /* 在播放按钮下方 */
+      bottom: 30px; /* 移动到页面底部 */
       left: 50%;
-      transform: translate(-50%, 0);
+      transform: translateX(-50%);
       text-align: center;
       color: white;
       font-size: 16px;
@@ -193,10 +193,10 @@
       object-fit: contain;
     }
     
-    /* 播放按钮 - 向上移动 */
+    /* 播放按钮 - 继续向上移动 */
     .play-button {
       position: fixed;
-      top: 45%; /* 向上移动 */
+      top: 40%; /* 继续向上移动 */
       left: 50%;
       transform: translate(-50%, 0);
       z-index: 99;
