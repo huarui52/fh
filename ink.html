@@ -376,6 +376,23 @@
       cursor: pointer;
       display: none;
     }
+    
+    /* 备用播放器容器 */
+    .fallback-player {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 90;
+      display: none;
+    }
+    
+    .fallback-player iframe {
+      width: 100%;
+      height: 100%;
+      border: none;
+    }
   </style>
 </head>
 <body>
@@ -409,6 +426,9 @@
   <div class="custom-player" id="customPlayer">
     <video id="videoElement" playsinline webkit-playsinline preload="auto"></video>
   </div>
+  
+  <!-- 备用播放器 -->
+  <div class="fallback-player" id="fallbackPlayer"></div>
   
   <!-- 视频封面 -->
   <div class="video-cover" id="videoCover">
@@ -452,6 +472,7 @@
       const additionalTip = document.getElementById('additionalTip');
       const customPlayer = document.getElementById('customPlayer');
       const videoElement = document.getElementById('videoElement');
+      const fallbackPlayer = document.getElementById('fallbackPlayer');
       const videoCover = document.getElementById('videoCover');
       const clickArea = document.getElementById('clickArea');
       const playButton = document.getElementById('playButton');
@@ -471,6 +492,8 @@
       let countdownValue = 3;
       let isVideoLoaded = false;
       let currentVideoUrl = '';
+      let errorCount = 0;
+      const MAX_RETRIES = 2; // 最大重试次数
       
       // 获取URL参数
       const urlParams = new URLSearchParams(window.location.search);
@@ -505,15 +528,21 @@
         startLinkDetection(videoUrl);
       });
       
-      // 链接检测函数 - 使用iframe方法获取重定向地址
+      // 链接检测函数 - 优先使用自定义播放器
       function startLinkDetection(url) {
+        // 重置状态
+        errorCount = 0;
+        isVideoLoaded = false;
+        fallbackPlayer.style.display = 'none';
+        customPlayer.style.display = 'flex';
+        
         linkChecking.style.display = 'block';
         loader.style.display = 'none';
         
         console.log('开始检测链接:', url);
         
-        // 方法1: 使用iframe获取重定向地址
-        getRedirectUrlWithIframe(url)
+        // 获取最终视频地址
+        getFinalVideoUrl(url)
           .then(finalUrl => {
             console.log('获取到最终视频地址:', finalUrl);
             currentVideoUrl = finalUrl;
@@ -521,9 +550,8 @@
             loader.style.display = 'block';
             bufferingTip.style.display = 'block';
             
-            // 设置视频源并开始预加载 - 使用我们自定义的播放器
-            videoElement.src = finalUrl;
-            videoElement.preload = "auto";
+            // 检测视频类型并设置合适的MIME类型
+            setupVideoSource(finalUrl);
             
             // 开始缓冲视频
             videoElement.load();
@@ -532,27 +560,78 @@
             startCountdown();
           })
           .catch(error => {
-            console.log('获取重定向地址失败:', error);
-            // 尝试直接使用原始URL
-            console.log('尝试直接使用原始URL');
+            console.log('获取视频地址失败:', error);
+            // 直接使用原始URL尝试播放
             currentVideoUrl = url;
             linkChecking.style.display = 'none';
             loader.style.display = 'block';
             bufferingTip.style.display = 'block';
             
-            videoElement.src = url;
-            videoElement.preload = "auto";
+            setupVideoSource(url);
             videoElement.load();
-            
-            // 开始倒计时
             startCountdown();
           });
+      }
+      
+      // 设置视频源，根据URL推测MIME类型
+      function setupVideoSource(url) {
+        // 清除现有源
+        while (videoElement.firstChild) {
+          videoElement.removeChild(videoElement.firstChild);
+        }
+        
+        // 尝试检测视频类型
+        let type = '';
+        if (url.includes('.mp4') || url.includes('mp4')) {
+          type = 'video/mp4';
+        } else if (url.includes('.webm')) {
+          type = 'video/webm';
+        } else if (url.includes('.mov')) {
+          type = 'video/quicktime';
+        } else if (url.includes('.m3u8')) {
+          type = 'application/x-mpegURL';
+        }
+        
+        // 创建source元素
+        const source = document.createElement('source');
+        source.src = url;
+        if (type) {
+          source.type = type;
+          console.log('设置视频类型:', type);
+        }
+        
+        videoElement.appendChild(source);
+        videoElement.src = url; // 直接设置src作为备选
+      }
+      
+      // 获取最终视频URL
+      function getFinalVideoUrl(url) {
+        return new Promise((resolve, reject) => {
+          // 先尝试HEAD请求获取最终URL
+          fetch(url, { method: 'HEAD', redirect: 'follow' })
+            .then(response => {
+              if (response.url) {
+                resolve(response.url);
+              } else {
+                resolve(url);
+              }
+            })
+            .catch(error => {
+              console.log('HEAD请求失败，尝试iframe方法:', error);
+              // HEAD请求失败，尝试iframe方法
+              getRedirectUrlWithIframe(url)
+                .then(resolve)
+                .catch(() => {
+                  // 所有方法都失败，返回原始URL
+                  resolve(url);
+                });
+            });
+        });
       }
       
       // 使用iframe获取重定向地址
       function getRedirectUrlWithIframe(url) {
         return new Promise((resolve, reject) => {
-          // 创建一个隐藏的iframe
           const iframe = document.createElement('iframe');
           iframe.style.display = 'none';
           iframe.src = url;
@@ -566,27 +645,19 @@
           iframe.onload = function() {
             clearTimeout(timeout);
             try {
-              // 尝试获取iframe的内容URL
               const iframeUrl = iframe.contentWindow.location.href;
               document.body.removeChild(iframe);
               
-              // 如果iframe的URL与原始URL不同，说明发生了重定向
               if (iframeUrl !== url) {
                 console.log('检测到重定向:', iframeUrl);
                 resolve(iframeUrl);
               } else {
-                // 没有重定向，使用原始URL
                 resolve(url);
               }
             } catch (e) {
-              // 跨域限制，无法获取iframe的URL
-              console.log('跨域限制，无法获取重定向地址:', e);
+              console.log('跨域限制，无法获取iframe的URL:', e);
               document.body.removeChild(iframe);
-              
-              // 尝试使用服务端代理
-              getRedirectUrlWithProxy(url)
-                .then(resolve)
-                .catch(reject);
+              resolve(url);
             }
           };
           
@@ -600,37 +671,8 @@
         });
       }
       
-      // 使用服务端代理获取重定向地址
-      function getRedirectUrlWithProxy(url) {
-        return new Promise((resolve, reject) => {
-          // 这里可以使用免费的CORS代理服务
-          const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(url)}`;
-          
-          fetch(proxyUrl)
-            .then(response => response.json())
-            .then(data => {
-              // 解析响应，获取最终URL
-              console.log('代理响应:', data);
-              
-              // 如果代理返回了最终URL，使用它
-              if (data.url) {
-                resolve(data.url);
-              } else {
-                // 否则使用原始URL
-                resolve(url);
-              }
-            })
-            .catch(error => {
-              console.log('代理请求失败:', error);
-              // 代理失败，使用原始URL
-              resolve(url);
-            });
-        });
-      }
-      
       // 监听视频加载进度
       videoElement.addEventListener('progress', function() {
-        // 检查视频是否已经有足够的数据可以播放
         if (videoElement.buffered.length > 0 && videoElement.buffered.end(0) > 5) {
           isVideoLoaded = true;
         }
@@ -668,7 +710,6 @@
         fullscreenButton.style.display = 'block';
         clickArea.style.display = 'block';
         
-        // 如果视频已经加载完成，直接显示播放按钮
         if (isVideoLoaded) {
           console.log('视频已预加载完成，点击即可播放');
         } else {
@@ -754,16 +795,40 @@
         updateProgress();
       });
       
+      // 增强的错误处理
       videoElement.addEventListener('error', function() {
-        console.log('视频元素播放失败，错误信息:', videoElement.error);
-        // 只有在视频元素确实无法播放时才使用iframe方式
-        if (videoElement.error && videoElement.error.code === 4) {
-          console.log('视频格式不支持，尝试iframe方式');
-          tryIframePlayback(currentVideoUrl);
+        console.log('视频元素错误，代码:', videoElement.error.code);
+        errorCount++;
+        
+        // 先尝试重试几次
+        if (errorCount <= MAX_RETRIES) {
+          console.log(`尝试重新加载视频 (${errorCount}/${MAX_RETRIES})`);
+          showError(`视频加载失败，正在重试 (${errorCount}/${MAX_RETRIES})`);
+          
+          // 重新加载视频
+          setTimeout(() => {
+            errorMessage.style.display = 'none';
+            retryButton.style.display = 'none';
+            loader.style.display = 'block';
+            videoElement.src = currentVideoUrl;
+            videoElement.load();
+          }, 1500);
         } else {
-          // 其他错误，显示错误信息
-          showError('视频加载失败，请检查链接是否有效');
+          // 多次重试失败后才使用iframe作为最后的备选
+          console.log('多次尝试失败，尝试iframe方式作为最后的备选');
+          tryIframePlayback(currentVideoUrl);
         }
+      });
+      
+      // 监听视频卡顿/缓冲
+      videoElement.addEventListener('waiting', function() {
+        console.log('视频缓冲中...');
+        loader.style.display = 'block';
+      });
+      
+      videoElement.addEventListener('playing', function() {
+        console.log('视频继续播放');
+        loader.style.display = 'none';
       });
       
       // 双击切换全屏
@@ -795,13 +860,14 @@
               startProgressUpdate();
             })
             .catch(error => {
-              console.log('播放失败，错误信息:', error);
-              // 只有在特定错误时才使用iframe方式
-              if (error.name === 'NotSupportedError' || error.name === 'MediaError') {
-                console.log('视频格式不支持，尝试iframe方式');
-                tryIframePlayback(currentVideoUrl);
+              console.log('播放失败:', error);
+              errorCount++;
+              
+              if (errorCount <= MAX_RETRIES) {
+                console.log(`尝试重新播放 (${errorCount}/${MAX_RETRIES})`);
+                setTimeout(() => playVideo(), 1000);
               } else {
-                showError('播放失败: ' + error.message);
+                tryIframePlayback(currentVideoUrl);
               }
             });
         } else {
@@ -927,61 +993,50 @@
         console.error(message);
       }
       
-      // 尝试使用iframe播放（仅在视频元素无法播放时使用）
+      // 尝试使用iframe播放（仅作为最后的备选方案）
       function tryIframePlayback(url) {
-        console.log('尝试iframe播放:', url);
+        console.log('已尝试所有方法，最后尝试iframe播放:', url);
         
-        // 隐藏所有现有元素
-        loader.style.display = 'none';
-        bufferingTip.style.display = 'none';
-        playTip.style.display = 'none';
-        additionalTip.style.display = 'none';
-        customPlayer.style.display = 'none';
-        videoCover.style.display = 'none';
-        playButton.style.display = 'none';
-        pauseButton.style.display = 'none';
-        fullscreenButton.style.display = 'none';
-        clickArea.style.display = 'none';
-        errorMessage.style.display = 'none';
+        // 显示切换播放器提示
+        errorMessage.textContent = '检测到视频格式兼容性问题，正在切换到备用播放器...';
+        errorMessage.style.display = 'block';
         retryButton.style.display = 'none';
         
-        // 创建iframe
-        const iframe = document.createElement('iframe');
-        iframe.style.position = 'fixed';
-        iframe.style.top = '0';
-        iframe.style.left = '0';
-        iframe.style.width = '100%';
-        iframe.style.height = '100%';
-        iframe.style.border = 'none';
-        iframe.style.zIndex = '1000';
-        iframe.setAttribute('allowfullscreen', '');
-        iframe.setAttribute('webkitallowfullscreen', '');
-        iframe.setAttribute('mozallowfullscreen', '');
-        iframe.setAttribute('allow', 'autoplay; fullscreen');
-        iframe.src = url;
-        
-        document.body.appendChild(iframe);
-        
-        // 添加全屏按钮
-        const iframeFullscreenBtn = document.createElement('button');
-        iframeFullscreenBtn.textContent = '全屏播放';
-        iframeFullscreenBtn.className = 'fullscreen-button';
-        iframeFullscreenBtn.style.zIndex = '1001';
-        iframeFullscreenBtn.onclick = function() {
-          if (iframe.requestFullscreen) {
-            iframe.requestFullscreen();
-          } else if (iframe.webkitRequestFullscreen) {
-            iframe.webkitRequestFullscreen();
-          } else if (iframe.mozRequestFullScreen) {
-            iframe.mozRequestFullScreen();
-          } else if (iframe.msRequestFullscreen) {
-            iframe.msRequestFullscreen();
-          }
-        };
-        
-        document.body.appendChild(iframeFullscreenBtn);
-        
-        console.log('已切换到iframe播放模式');
+        setTimeout(() => {
+          // 隐藏自定义播放器，显示iframe播放器
+          customPlayer.style.display = 'none';
+          playButton.style.display = 'none';
+          pauseButton.style.display = 'none';
+          progressContainer.style.display = 'none';
+          timeDisplay.style.display = 'none';
+          videoCover.style.display = 'none';
+          errorMessage.style.display = 'none';
+          
+          // 创建iframe
+          fallbackPlayer.innerHTML = '';
+          const iframe = document.createElement('iframe');
+          iframe.src = url;
+          iframe.setAttribute('allowfullscreen', '');
+          iframe.setAttribute('webkitallowfullscreen', '');
+          iframe.setAttribute('mozallowfullscreen', '');
+          iframe.setAttribute('allow', 'autoplay; fullscreen');
+          
+          fallbackPlayer.appendChild(iframe);
+          fallbackPlayer.style.display = 'block';
+          
+          // 更新全屏按钮功能
+          fullscreenButton.onclick = function() {
+            if (iframe.requestFullscreen) {
+              iframe.requestFullscreen();
+            } else if (iframe.webkitRequestFullscreen) {
+              iframe.webkitRequestFullscreen();
+            } else if (iframe.mozRequestFullScreen) {
+              iframe.mozRequestFullScreen();
+            } else if (iframe.msRequestFullscreen) {
+              iframe.msRequestFullscreen();
+            }
+          };
+        }, 2000);
       }
       
       console.log('视频URL:', videoUrl);
