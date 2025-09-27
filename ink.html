@@ -3,7 +3,9 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>百草珍酿学习课 V3.0</title>
+  <meta content="yes" name="apple-mobile-web-app-capable">
+  <meta content="black" name="apple-mobile-web-app-status-bar-style">
+  <title>百草珍酿学习课</title>
   <style>
     * {
       margin: 0;
@@ -94,7 +96,7 @@
       100% { transform: translate(-50%, -50%) rotate(360deg); }
     }
     
-    /* 缓冲提示 - 调整位置 */
+    /* 缓冲提示 */
     .buffering-tip {
       position: fixed;
       top: 25%;
@@ -108,10 +110,10 @@
       z-index: 95;
       padding: 20px;
       width: 100%;
-      display: none;
       background: rgba(0, 0, 0, 0.7);
       border-radius: 15px;
       max-width: 80%;
+      display: none;
     }
     
     .buffering-title {
@@ -132,10 +134,10 @@
       margin-top: 10px;
     }
     
-    /* 播放提示 - 继续向上移动 */
+    /* 播放提示 */
     .play-tip {
       position: fixed;
-      top: 25%; /* 继续向上移动 */
+      top: 25%;
       left: 50%;
       transform: translate(-50%, -50%);
       text-align: center;
@@ -156,10 +158,10 @@
       100% { opacity: 0.7; }
     }
     
-    /* 新增提示文字 - 向上移动10% */
+    /* 新增提示文字 */
     .additional-tip {
       position: fixed;
-      bottom: 80px; /* 向上移动10% */
+      bottom: 80px;
       left: 50%;
       transform: translateX(-50%);
       text-align: center;
@@ -193,10 +195,10 @@
       object-fit: contain;
     }
     
-    /* 播放按钮 - 继续向上移动 */
+    /* 播放按钮 */
     .play-button {
       position: fixed;
-      top: 40%; /* 继续向上移动 */
+      top: 40%;
       left: 50%;
       transform: translate(-50%, 0);
       z-index: 99;
@@ -344,30 +346,19 @@
       display: none;
       transition: opacity 0.3s;
     }
-    
-    /* 链接检测提示 */
-    .link-checking {
-      position: fixed;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      color: white;
-      text-align: center;
-      z-index: 95;
-      display: none;
-      background: rgba(0, 0, 0, 0.8);
-      padding: 20px;
-      border-radius: 10px;
+
+    /* 横屏模式兼容（移动端） */
+    @media (orientation: landscape) and (max-width: 992px) {
+      .play-button {
+        top: 35%;
+      }
+      .buffering-tip, .play-tip {
+        top: 20%;
+      }
     }
   </style>
 </head>
 <body>
-  <!-- 链接检测提示 -->
-  <div class="link-checking" id="linkChecking">
-    <div style="font-size: 24px; margin-bottom: 15px;">正在检测视频链接...</div>
-    <div style="font-size: 16px;">请稍候，正在解析视频地址</div>
-  </div>
-  
   <!-- 加载动画 -->
   <div class="loader">
     <div class="dot dot-1"></div>
@@ -378,8 +369,8 @@
   <!-- 缓冲提示 -->
   <div class="buffering-tip" id="bufferingTip">
     <div class="buffering-title">百草珍酿 节目缓冲中</div>
-    <div class="buffering-subtitle">请稍候...</div>
-    <div class="countdown" id="countdown">3秒</div>
+    <div class="buffering-subtitle">正在解析视频地址，请稍候...</div>
+    <div class="countdown" id="countdown">5秒</div>
   </div>
   
   <!-- 播放提示 -->
@@ -423,9 +414,8 @@
 
   <script>
     document.addEventListener('DOMContentLoaded', function() {
-      // 获取DOM元素
+      // DOM元素获取
       const loader = document.querySelector('.loader');
-      const linkChecking = document.getElementById('linkChecking');
       const bufferingTip = document.getElementById('bufferingTip');
       const countdown = document.getElementById('countdown');
       const playTip = document.getElementById('playTip');
@@ -442,13 +432,17 @@
       const progressBar = document.getElementById('progressBar');
       const timeDisplay = document.getElementById('timeDisplay');
       
-      // 播放状态控制
+      // 状态控制变量
       let isPlaying = false;
       let progressTimer = null;
       let hideControlsTimer = null;
       let countdownTimer = null;
-      let countdownValue = 3;
+      let countdownValue = 5; // 解析地址阶段倒计时延长至5秒
       let isVideoLoaded = false;
+      let finalVideoUrl = ''; // 存储最终解析后的视频地址
+      
+      // 初始化：显示缓冲提示
+      bufferingTip.style.display = 'block';
       
       // 获取URL参数
       const urlParams = new URLSearchParams(window.location.search);
@@ -460,117 +454,99 @@
       }
       
       // 解码URL
-      let videoUrl;
+      let originalUrl;
       try {
-        videoUrl = atob(encodedParam);
+        originalUrl = atob(encodedParam);
       } catch (e) {
         showError('视频参数格式错误');
         return;
       }
       
-      if (!videoUrl.includes("http")) {
+      if (!originalUrl.includes("http")) {
         showError('无效的视频链接');
         return;
       }
       
-      // 开始检测链接
-      startLinkDetection(videoUrl);
-      
-      // 链接检测函数
-      function startLinkDetection(url) {
-        linkChecking.style.display = 'block';
-        loader.style.display = 'none';
-        
-        console.log('开始检测链接:', url);
-        
-        // 使用fetch API检测链接是否会重定向
-        fetch(url, {
-          method: 'HEAD',
-          mode: 'no-cors', // 允许跨域请求
-          redirect: 'follow'
-        })
-        .then(response => {
-          // 由于no-cors模式，我们无法直接获取重定向后的URL
-          // 但我们可以通过其他方式检测
-          console.log('链接检测完成，开始加载视频');
-          linkChecking.style.display = 'none';
-          loader.style.display = 'block';
-          bufferingTip.style.display = 'block';
+      // 核心功能：解析可能存在跳转的视频地址
+      resolveVideoUrl(originalUrl)
+        .then(resolvedUrl => {
+          finalVideoUrl = resolvedUrl;
+          console.log('解析完成，最终视频地址:', finalVideoUrl);
           
           // 设置视频源并开始预加载
-          videoElement.src = url;
+          videoElement.src = finalVideoUrl;
           videoElement.preload = "auto";
-          
-          // 开始缓冲视频
           videoElement.load();
+          
+          // 监听视频加载进度
+          videoElement.addEventListener('progress', function() {
+            if (videoElement.buffered.length > 0 && videoElement.buffered.end(0) > 5) {
+              isVideoLoaded = true;
+            }
+          });
+          
+          // 监听视频可以播放事件
+          videoElement.addEventListener('canplay', function() {
+            isVideoLoaded = true;
+            console.log('视频已加载，可以播放');
+          });
           
           // 开始倒计时
           startCountdown();
         })
         .catch(error => {
-          console.log('链接检测失败，尝试直接加载:', error);
-          linkChecking.style.display = 'none';
-          loader.style.display = 'block';
-          bufferingTip.style.display = 'block';
-          
-          // 即使检测失败也尝试直接加载
-          videoElement.src = url;
-          videoElement.preload = "auto";
-          videoElement.load();
-          
-          // 开始倒计时
-          startCountdown();
-        });
-        
-        // 备用方案：使用XMLHttpRequest检测重定向
-        detectRedirectWithXHR(url);
-      }
-      
-      // 使用XMLHttpRequest检测重定向
-      function detectRedirectWithXHR(url) {
-        const xhr = new XMLHttpRequest();
-        xhr.open('GET', url, true);
-        xhr.timeout = 10000; // 10秒超时
-        
-        xhr.onreadystatechange = function() {
-          if (xhr.readyState === 4) {
-            if (xhr.status === 200) {
-              // 如果请求成功，说明链接有效
-              console.log('XHR检测: 链接有效');
-            } else {
-              console.log('XHR检测: 链接可能有问题，状态码:', xhr.status);
-            }
+          console.error('解析视频地址失败:', error);
+          // 解析失败时尝试直接使用原始地址
+          try {
+            videoElement.src = originalUrl;
+            videoElement.load();
+            finalVideoUrl = originalUrl;
+            startCountdown();
+          } catch (e) {
+            showError('视频地址解析失败: ' + error.message);
           }
-        };
-        
-        xhr.onerror = function() {
-          console.log('XHR检测: 请求出错，但可能只是跨域限制');
-        };
-        
-        xhr.ontimeout = function() {
-          console.log('XHR检测: 请求超时');
-        };
-        
-        try {
-          xhr.send();
-        } catch (e) {
-          console.log('XHR检测异常:', e);
-        }
+        });
+      
+      // 解析视频地址的函数（处理跳转）
+      function resolveVideoUrl(url) {
+        return new Promise((resolve, reject) => {
+          // 对于已知的跳转域名，使用HEAD请求获取最终地址
+          if (url.includes('api.camin.cn')) {
+            const xhr = new XMLHttpRequest();
+            xhr.open('HEAD', url, true);
+            xhr.followRedirects = false; // 不自动跟随跳转
+            
+            xhr.onload = function() {
+              if (xhr.status >= 300 && xhr.status < 400) {
+                // 获取重定向地址
+                const redirectUrl = xhr.getResponseHeader('Location');
+                if (redirectUrl) {
+                  resolve(redirectUrl);
+                } else {
+                  reject(new Error('未找到跳转地址'));
+                }
+              } else {
+                // 非跳转状态码，直接使用原地址
+                resolve(url);
+              }
+            };
+            
+            xhr.onerror = function() {
+              reject(new Error('请求失败'));
+            };
+            
+            xhr.send();
+          } 
+          // 对于MP4直接链接，不进行解析
+          else if (url.toLowerCase().endsWith('.mp4')) {
+            resolve(url);
+          }
+          // 其他情况尝试直接使用
+          else {
+            resolve(url);
+          }
+        });
       }
-      
-      // 监听视频加载进度
-      videoElement.addEventListener('progress', function() {
-        // 检查视频是否已经有足够的数据可以播放
-        if (videoElement.buffered.length > 0 && videoElement.buffered.end(0) > 5) {
-          isVideoLoaded = true;
-        }
-      });
-      
-      // 监听视频可以播放事件
-      videoElement.addEventListener('canplay', function() {
-        isVideoLoaded = true;
-        console.log('视频已加载，可以播放');
-      });
       
       // 倒计时函数
       function startCountdown() {
@@ -598,7 +574,6 @@
         fullscreenButton.style.display = 'block';
         clickArea.style.display = 'block';
         
-        // 如果视频已经加载完成，直接显示播放按钮
         if (isVideoLoaded) {
           console.log('视频已预加载完成，点击即可播放');
         } else {
@@ -685,9 +660,25 @@
       });
       
       videoElement.addEventListener('error', function() {
-        // 尝试使用iframe方式播放
-        console.log('视频元素播放失败，尝试iframe方式');
-        tryIframePlayback(videoUrl);
+        let errorMsg = '视频加载失败';
+        switch(videoElement.error.code) {
+          case 1: errorMsg += ' - 视频格式不支持'; break;
+          case 2: errorMsg += ' - 服务器或网络错误'; break;
+          case 3: errorMsg += ' - 视频解码失败'; break;
+          case 4: errorMsg += ' - 视频无法加载'; break;
+        }
+        showError(errorMsg + '，尝试使用原始地址播放');
+        
+        // 尝试使用原始地址重新加载
+        if (finalVideoUrl !== originalUrl) {
+          try {
+            videoElement.src = originalUrl;
+            videoElement.load();
+            finalVideoUrl = originalUrl;
+          } catch (e) {
+            console.error('尝试原始地址播放失败:', e);
+          }
+        }
       });
       
       // 双击切换全屏
@@ -719,8 +710,7 @@
               startProgressUpdate();
             })
             .catch(error => {
-              console.log('播放失败，尝试iframe方式:', error);
-              tryIframePlayback(videoUrl);
+              showError('播放失败: ' + error.message);
             });
         } else {
           pauseVideo();
@@ -837,69 +827,13 @@
       function showError(message) {
         loader.style.display = 'none';
         bufferingTip.style.display = 'none';
-        linkChecking.style.display = 'none';
         if (countdownTimer) clearInterval(countdownTimer);
         errorMessage.textContent = message;
         errorMessage.style.display = 'block';
         console.error(message);
       }
       
-      // 尝试使用iframe播放（兼容V1.0方式）
-      function tryIframePlayback(url) {
-        console.log('尝试iframe播放:', url);
-        
-        // 隐藏所有现有元素
-        loader.style.display = 'none';
-        bufferingTip.style.display = 'none';
-        playTip.style.display = 'none';
-        additionalTip.style.display = 'none';
-        customPlayer.style.display = 'none';
-        videoCover.style.display = 'none';
-        playButton.style.display = 'none';
-        pauseButton.style.display = 'none';
-        fullscreenButton.style.display = 'none';
-        clickArea.style.display = 'none';
-        
-        // 创建iframe
-        const iframe = document.createElement('iframe');
-        iframe.style.position = 'fixed';
-        iframe.style.top = '0';
-        iframe.style.left = '0';
-        iframe.style.width = '100%';
-        iframe.style.height = '100%';
-        iframe.style.border = 'none';
-        iframe.style.zIndex = '1000';
-        iframe.setAttribute('allowfullscreen', '');
-        iframe.setAttribute('webkitallowfullscreen', '');
-        iframe.setAttribute('mozallowfullscreen', '');
-        iframe.setAttribute('allow', 'autoplay; fullscreen');
-        iframe.src = url;
-        
-        document.body.appendChild(iframe);
-        
-        // 添加全屏按钮
-        const iframeFullscreenBtn = document.createElement('button');
-        iframeFullscreenBtn.textContent = '全屏播放';
-        iframeFullscreenBtn.className = 'fullscreen-button';
-        iframeFullscreenBtn.style.zIndex = '1001';
-        iframeFullscreenBtn.onclick = function() {
-          if (iframe.requestFullscreen) {
-            iframe.requestFullscreen();
-          } else if (iframe.webkitRequestFullscreen) {
-            iframe.webkitRequestFullscreen();
-          } else if (iframe.mozRequestFullScreen) {
-            iframe.mozRequestFullScreen();
-          } else if (iframe.msRequestFullscreen) {
-            iframe.msRequestFullscreen();
-          }
-        };
-        
-        document.body.appendChild(iframeFullscreenBtn);
-        
-        console.log('已切换到iframe播放模式');
-      }
-      
-      console.log('视频URL:', videoUrl);
+      console.log('初始视频URL:', originalUrl);
     });
   </script>
 </body>
