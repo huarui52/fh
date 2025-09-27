@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>百草珍酿学习2课</title>
+  <title>百草珍酿学习课</title>
   <style>
     * {
       margin: 0;
@@ -454,6 +454,8 @@
         return;
       }
       
+      console.log('原始视频URL:', videoUrl);
+      
       // 检查是否需要处理跳转地址
       if (videoUrl.includes("https://api.camin.cn/public/video/")) {
         // 处理需要跳转的地址
@@ -463,43 +465,57 @@
         setVideoSource(videoUrl);
       }
       
-      // 处理跳转地址的函数
+      // 处理跳转地址的函数 - 使用XMLHttpRequest来获取重定向后的URL
       function handleRedirectUrl(url) {
         // 显示加载状态
         bufferingTip.querySelector('.buffering-title').textContent = '正在解析视频地址...';
+        countdown.textContent = '解析中...';
         
-        // 使用fetch API获取重定向后的地址
-        fetch(url, {
-          method: 'HEAD', // 使用HEAD方法避免下载整个文件
-          redirect: 'follow'
-        })
-        .then(response => {
-          if (response.ok) {
-            // 获取最终URL
-            const finalUrl = response.url;
-            console.log('重定向后的地址:', finalUrl);
-            
-            // 设置视频源
-            setVideoSource(finalUrl);
-          } else {
-            throw new Error('无法获取视频地址');
+        // 使用XMLHttpRequest来获取重定向后的URL
+        const xhr = new XMLHttpRequest();
+        xhr.open('GET', url, true);
+        xhr.responseType = 'blob'; // 设置为blob类型
+        
+        xhr.onreadystatechange = function() {
+          if (xhr.readyState === 4) {
+            if (xhr.status === 200) {
+              // 获取重定向后的最终URL
+              const finalUrl = xhr.responseURL;
+              console.log('重定向后的视频URL:', finalUrl);
+              
+              // 设置视频源
+              setVideoSource(finalUrl);
+            } else {
+              console.error('获取重定向URL失败，状态码:', xhr.status);
+              
+              // 尝试直接使用原始URL
+              console.log('尝试直接使用原始URL');
+              setVideoSource(url);
+            }
           }
-        })
-        .catch(error => {
-          console.error('解析视频地址失败:', error);
-          
-          // 尝试直接使用原始URL作为备选方案
-          console.log('尝试直接使用原始URL');
+        };
+        
+        xhr.onerror = function() {
+          console.error('网络错误，尝试直接使用原始URL');
           setVideoSource(url);
-        });
+        };
+        
+        // 设置超时时间
+        xhr.timeout = 10000; // 10秒超时
+        xhr.ontimeout = function() {
+          console.error('请求超时，尝试直接使用原始URL');
+          setVideoSource(url);
+        };
+        
+        xhr.send();
       }
       
       // 设置视频源的函数
       function setVideoSource(url) {
-        videoElement.src = url;
-        videoElement.preload = "auto"; // 确保视频预加载
+        console.log('设置视频源:', url);
         
-        // 开始缓冲视频
+        // 重置视频元素
+        videoElement.src = url;
         videoElement.load();
         
         // 监听视频加载进度
@@ -516,13 +532,27 @@
           console.log('视频已加载，可以播放');
         });
         
+        // 监听视频错误事件
+        videoElement.addEventListener('error', function(e) {
+          console.error('视频加载错误:', e);
+          
+          // 如果当前URL是跳转地址且加载失败，尝试直接使用原始URL
+          if (url.includes("https://api.camin.cn/public/video/")) {
+            console.log('跳转地址加载失败，尝试直接使用原始URL');
+            // 这里可以添加重试逻辑
+          }
+        });
+        
         // 开始倒计时
         startCountdown();
       }
       
       // 倒计时函数
       function startCountdown() {
+        countdownValue = 3;
         countdown.textContent = countdownValue + '秒';
+        
+        if (countdownTimer) clearInterval(countdownTimer);
         
         countdownTimer = setInterval(() => {
           countdownValue--;
@@ -632,7 +662,8 @@
         updateProgress();
       });
       
-      videoElement.addEventListener('error', function() {
+      videoElement.addEventListener('error', function(e) {
+        console.error('视频播放错误:', e);
         showError('视频加载失败，请检查链接是否有效');
       });
       
@@ -665,6 +696,7 @@
               startProgressUpdate();
             })
             .catch(error => {
+              console.error('播放失败:', error);
               showError('播放失败: ' + error.message);
             });
         } else {
@@ -787,8 +819,6 @@
         errorMessage.style.display = 'block';
         console.error(message);
       }
-      
-      console.log('视频URL:', videoUrl);
     });
   </script>
 </body>
