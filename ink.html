@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>百草珍酿学习9课</title>
+  <title>百草珍酿学习课</title>
   <style>
     * {
       margin: 0;
@@ -94,7 +94,7 @@
       100% { transform: translate(-50%, -50%) rotate(360deg); }
     }
     
-    /* 缓冲提示 - 调整位置 */
+    /* 缓冲提示 */
     .buffering-tip {
       position: fixed;
       top: 25%;
@@ -132,10 +132,10 @@
       margin-top: 10px;
     }
     
-    /* 播放提示 - 继续向上移动 */
+    /* 播放提示 */
     .play-tip {
       position: fixed;
-      top: 25%; /* 继续向上移动 */
+      top: 25%;
       left: 50%;
       transform: translate(-50%, -50%);
       text-align: center;
@@ -156,10 +156,10 @@
       100% { opacity: 0.7; }
     }
     
-    /* 新增提示文字 - 向上移动10% */
+    /* 新增提示文字 */
     .additional-tip {
       position: fixed;
-      bottom: 80px; /* 向上移动10% */
+      bottom: 80px;
       left: 50%;
       transform: translateX(-50%);
       text-align: center;
@@ -193,10 +193,10 @@
       object-fit: contain;
     }
     
-    /* 播放按钮 - 继续向上移动 */
+    /* 播放按钮 */
     .play-button {
       position: fixed;
-      top: 40%; /* 继续向上移动 */
+      top: 40%;
       left: 50%;
       transform: translate(-50%, 0);
       z-index: 99;
@@ -345,43 +345,20 @@
       transition: opacity 0.3s;
     }
     
-    /* 备用iframe容器 */
-    .iframe-container {
+    /* 链接处理提示 */
+    .url-processing {
       position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background: #000;
-      z-index: 90;
-      display: none;
-    }
-    
-    .iframe-container iframe {
-      width: 100%;
-      height: 100%;
-      border: none;
-    }
-    
-    /* 切换播放器按钮 */
-    .switch-player {
-      position: fixed;
-      left: 20px;
-      bottom: 20px;
-      z-index: 99;
-      background: rgba(0, 0, 0, 0.7);
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      text-align: center;
       color: white;
-      border: none;
-      border-radius: 5px;
-      padding: 10px 15px;
-      font-size: 14px;
-      cursor: pointer;
-      transition: all 0.3s;
+      font-size: 18px;
+      z-index: 95;
+      padding: 20px;
+      background: rgba(0, 0, 0, 0.7);
+      border-radius: 10px;
       display: none;
-    }
-    
-    .switch-player:hover {
-      background: rgba(0, 0, 0, 0.9);
     }
   </style>
 </head>
@@ -400,6 +377,11 @@
     <div class="countdown" id="countdown">3秒</div>
   </div>
   
+  <!-- 链接处理提示 -->
+  <div class="url-processing" id="urlProcessing">
+    正在处理视频链接，请稍候...
+  </div>
+  
   <!-- 播放提示 -->
   <div class="play-tip" id="playTip">请您点击下面的播放键进行观看</div>
   
@@ -409,11 +391,6 @@
   <!-- 自定义视频播放器 -->
   <div class="custom-player" id="customPlayer">
     <video id="videoElement" playsinline webkit-playsinline preload="auto"></video>
-  </div>
-  
-  <!-- 备用iframe播放器 -->
-  <div class="iframe-container" id="iframeContainer">
-    <iframe id="iframeElement" allowfullscreen webkitallowfullscreen mozallowfullscreen></iframe>
   </div>
   
   <!-- 视频封面 -->
@@ -441,9 +418,6 @@
   <!-- 全屏按钮 -->
   <button class="fullscreen-button" id="fullscreenButton">全屏播放</button>
   
-  <!-- 切换播放器按钮 -->
-  <button class="switch-player" id="switchPlayer">切换播放模式</button>
-  
   <!-- 错误提示 -->
   <div class="error-message" id="errorMessage"></div>
 
@@ -452,19 +426,17 @@
       // 获取DOM元素
       const loader = document.querySelector('.loader');
       const bufferingTip = document.getElementById('bufferingTip');
+      const urlProcessing = document.getElementById('urlProcessing');
       const countdown = document.getElementById('countdown');
       const playTip = document.getElementById('playTip');
       const additionalTip = document.getElementById('additionalTip');
       const customPlayer = document.getElementById('customPlayer');
-      const iframeContainer = document.getElementById('iframeContainer');
       const videoElement = document.getElementById('videoElement');
-      const iframeElement = document.getElementById('iframeElement');
       const videoCover = document.getElementById('videoCover');
       const clickArea = document.getElementById('clickArea');
       const playButton = document.getElementById('playButton');
       const pauseButton = document.getElementById('pauseButton');
       const fullscreenButton = document.getElementById('fullscreenButton');
-      const switchPlayer = document.getElementById('switchPlayer');
       const errorMessage = document.getElementById('errorMessage');
       const progressContainer = document.getElementById('progressContainer');
       const progressBar = document.getElementById('progressBar');
@@ -477,7 +449,6 @@
       let countdownTimer = null;
       let countdownValue = 3;
       let isVideoLoaded = false;
-      let currentPlayer = 'video'; // 'video' 或 'iframe'
       let finalVideoUrl = null;
       
       // 显示缓冲提示
@@ -513,56 +484,104 @@
       
       // 处理视频链接函数
       function processVideoUrl(url) {
-        // 首先尝试直接播放
-        testDirectPlay(url)
-          .then(directUrl => {
-            // 如果可以直接播放，使用video元素
-            finalVideoUrl = directUrl;
-            console.log('可以直接播放的URL:', finalVideoUrl);
+        // 显示链接处理提示
+        urlProcessing.style.display = 'block';
+        bufferingTip.style.display = 'none';
+        
+        // 尝试获取最终直链
+        getFinalVideoUrl(url)
+          .then(finalUrl => {
+            console.log('获取到最终直链:', finalUrl);
+            finalVideoUrl = finalUrl;
+            urlProcessing.style.display = 'none';
+            bufferingTip.style.display = 'block';
             setupVideoPlayer(finalVideoUrl);
           })
           .catch(error => {
-            console.log('直接播放失败，尝试iframe方式:', error);
-            // 如果直接播放失败，使用iframe方式
-            setupIframePlayer(url);
+            console.error('获取直链失败:', error);
+            // 如果获取直链失败，尝试直接播放原始链接
+            urlProcessing.style.display = 'none';
+            bufferingTip.style.display = 'block';
+            setupVideoPlayer(url);
           });
       }
       
-      // 测试直接播放
-      function testDirectPlay(url) {
+      // 获取最终直链
+      function getFinalVideoUrl(url) {
         return new Promise((resolve, reject) => {
-          // 创建一个临时的video元素来测试
-          const testVideo = document.createElement('video');
-          testVideo.preload = 'metadata';
-          testVideo.src = url;
+          // 创建一个隐藏的iframe来获取重定向后的URL
+          const iframe = document.createElement('iframe');
+          iframe.style.display = 'none';
+          iframe.src = url;
           
           // 设置超时
           const timeout = setTimeout(() => {
-            testVideo.src = '';
-            reject(new Error('测试超时'));
-          }, 5000);
+            document.body.removeChild(iframe);
+            reject(new Error('获取直链超时'));
+          }, 10000);
           
-          testVideo.addEventListener('loadedmetadata', () => {
+          iframe.onload = function() {
             clearTimeout(timeout);
-            resolve(url);
-          });
+            
+            try {
+              // 尝试获取iframe的src（可能受同源策略限制）
+              const iframeSrc = iframe.contentWindow.location.href;
+              document.body.removeChild(iframe);
+              
+              // 检查是否是视频文件
+              if (isVideoFile(iframeSrc)) {
+                resolve(iframeSrc);
+              } else {
+                // 如果不是视频文件，尝试使用原始URL
+                resolve(url);
+              }
+            } catch (e) {
+              // 同源策略限制，无法获取iframe内容
+              console.log('同源策略限制，无法获取重定向URL:', e);
+              document.body.removeChild(iframe);
+              
+              // 尝试通过HEAD请求获取重定向URL
+              fetchRedirectUrl(url)
+                .then(redirectUrl => resolve(redirectUrl))
+                .catch(err => reject(err));
+            }
+          };
           
-          testVideo.addEventListener('error', () => {
+          iframe.onerror = function() {
             clearTimeout(timeout);
-            reject(new Error('视频加载错误'));
-          });
+            document.body.removeChild(iframe);
+            reject(new Error('iframe加载错误'));
+          };
           
-          // 开始加载
-          testVideo.load();
+          document.body.appendChild(iframe);
         });
+      }
+      
+      // 通过HEAD请求获取重定向URL
+      function fetchRedirectUrl(url) {
+        return fetch(url, { method: 'HEAD', redirect: 'follow' })
+          .then(response => {
+            if (response.redirected) {
+              return response.url;
+            } else {
+              return url;
+            }
+          })
+          .catch(error => {
+            console.error('HEAD请求失败:', error);
+            return url; // 返回原始URL作为备选
+          });
+      }
+      
+      // 检查URL是否是视频文件
+      function isVideoFile(url) {
+        const videoExtensions = ['.mp4', '.m3u8', '.webm', '.ogg', '.mov', '.avi', '.mkv'];
+        return videoExtensions.some(ext => url.toLowerCase().includes(ext));
       }
       
       // 设置视频播放器
       function setupVideoPlayer(url) {
-        currentPlayer = 'video';
-        customPlayer.style.display = 'flex';
-        iframeContainer.style.display = 'none';
-        switchPlayer.style.display = 'block';
+        console.log('设置视频播放器，URL:', url);
         
         // 设置视频源并开始预加载
         videoElement.src = url;
@@ -583,20 +602,6 @@
           isVideoLoaded = true;
           console.log('视频已加载，可以播放');
         });
-        
-        // 开始倒计时
-        startCountdown();
-      }
-      
-      // 设置iframe播放器
-      function setupIframePlayer(url) {
-        currentPlayer = 'iframe';
-        customPlayer.style.display = 'none';
-        iframeContainer.style.display = 'block';
-        switchPlayer.style.display = 'block';
-        
-        // 设置iframe源
-        iframeElement.src = url;
         
         // 开始倒计时
         startCountdown();
@@ -628,10 +633,8 @@
         fullscreenButton.style.display = 'block';
         clickArea.style.display = 'block';
         
-        if (currentPlayer === 'video' && isVideoLoaded) {
+        if (isVideoLoaded) {
           console.log('视频已预加载完成，点击即可播放');
-        } else if (currentPlayer === 'iframe') {
-          console.log('iframe播放器已准备就绪');
         } else {
           console.log('视频仍在加载中...');
         }
@@ -649,38 +652,15 @@
       
       // 点击区域事件 - 点击屏幕暂停/播放
       clickArea.addEventListener('click', function() {
-        if (currentPlayer === 'video') {
-          if (isPlaying) {
-            pauseVideo();
-          } else {
-            playVideo();
-          }
+        if (isPlaying) {
+          pauseVideo();
+        } else {
+          playVideo();
         }
-        // iframe播放器内部有自己的控制，这里不处理
       });
       
       // 全屏按钮事件
       fullscreenButton.addEventListener('click', toggleFullscreen);
-      
-      // 切换播放器按钮事件
-      switchPlayer.addEventListener('click', function() {
-        if (currentPlayer === 'video') {
-          // 切换到iframe播放器
-          setupIframePlayer(finalVideoUrl || videoUrl);
-        } else {
-          // 切换到视频播放器
-          setupVideoPlayer(finalVideoUrl || videoUrl);
-        }
-        
-        // 重置播放状态
-        isPlaying = false;
-        playButton.style.display = 'flex';
-        pauseButton.style.display = 'none';
-        videoCover.style.display = 'flex';
-        progressContainer.style.display = 'none';
-        timeDisplay.style.display = 'none';
-        stopProgressUpdate();
-      });
       
       // 视频事件监听
       videoElement.addEventListener('play', function() {
@@ -739,9 +719,7 @@
       });
       
       videoElement.addEventListener('error', function() {
-        // 如果视频播放失败，尝试切换到iframe播放器
-        console.log('视频播放失败，尝试切换到iframe播放器');
-        setupIframePlayer(finalVideoUrl || videoUrl);
+        showError('视频加载失败，请检查链接是否有效');
       });
       
       // 双击切换全屏
@@ -755,64 +733,56 @@
       
       // 播放视频函数
       function playVideo() {
-        if (currentPlayer === 'video') {
-          if (videoElement.paused) {
-            videoElement.play()
-              .then(() => {
-                isPlaying = true;
-                playButton.style.display = 'none';
-                playTip.style.display = 'none';
-                additionalTip.style.display = 'none';
-                videoCover.style.display = 'none';
-                pauseButton.style.display = 'none';
-                
-                // 隐藏进度条和时间显示
-                progressContainer.style.display = 'none';
-                timeDisplay.style.display = 'none';
-                
-                // 开始更新进度
-                startProgressUpdate();
-              })
-              .catch(error => {
-                console.log('视频播放失败，尝试iframe方式:', error);
-                setupIframePlayer(finalVideoUrl || videoUrl);
-              });
-          } else {
-            pauseVideo();
-          }
+        if (videoElement.paused) {
+          videoElement.play()
+            .then(() => {
+              isPlaying = true;
+              playButton.style.display = 'none';
+              playTip.style.display = 'none';
+              additionalTip.style.display = 'none';
+              videoCover.style.display = 'none';
+              pauseButton.style.display = 'none';
+              
+              // 隐藏进度条和时间显示
+              progressContainer.style.display = 'none';
+              timeDisplay.style.display = 'none';
+              
+              // 开始更新进度
+              startProgressUpdate();
+            })
+            .catch(error => {
+              showError('播放失败: ' + error.message);
+            });
+        } else {
+          pauseVideo();
         }
-        // iframe播放器内部有自己的控制，这里不处理
       }
       
       // 暂停视频函数
       function pauseVideo() {
-        if (currentPlayer === 'video') {
-          videoElement.pause();
-          isPlaying = false;
-          pauseButton.style.display = 'flex';
-          
-          // 显示进度条和时间显示
-          progressContainer.style.display = 'block';
-          timeDisplay.style.display = 'block';
-          
-          // 停止更新进度
-          stopProgressUpdate();
-          
-          // 3秒后自动隐藏暂停按钮
-          clearTimeout(hideControlsTimer);
-          hideControlsTimer = setTimeout(() => {
-            if (!isPlaying) {
-              pauseButton.style.display = 'none';
-            }
-          }, 3000);
-        }
+        videoElement.pause();
+        isPlaying = false;
+        pauseButton.style.display = 'flex';
+        
+        // 显示进度条和时间显示
+        progressContainer.style.display = 'block';
+        timeDisplay.style.display = 'block';
+        
+        // 停止更新进度
+        stopProgressUpdate();
+        
+        // 3秒后自动隐藏暂停按钮
+        clearTimeout(hideControlsTimer);
+        hideControlsTimer = setTimeout(() => {
+          if (!isPlaying) {
+            pauseButton.style.display = 'none';
+          }
+        }, 3000);
       }
       
       // 开始更新进度
       function startProgressUpdate() {
-        if (currentPlayer === 'video') {
-          progressTimer = setInterval(updateProgress, 200);
-        }
+        progressTimer = setInterval(updateProgress, 200);
       }
       
       // 停止更新进度
@@ -825,7 +795,7 @@
       
       // 更新进度条
       function updateProgress() {
-        if (currentPlayer === 'video' && videoElement.duration) {
+        if (videoElement.duration) {
           const percent = (videoElement.currentTime / videoElement.duration) * 100;
           progressBar.style.width = percent + '%';
           
@@ -836,11 +806,9 @@
       
       // 更新时间显示
       function updateTimeDisplay() {
-        if (currentPlayer === 'video') {
-          const currentTime = formatTime(videoElement.currentTime);
-          const duration = formatTime(videoElement.duration);
-          timeDisplay.textContent = `${currentTime} / ${duration}`;
-        }
+        const currentTime = formatTime(videoElement.currentTime);
+        const duration = formatTime(videoElement.duration);
+        timeDisplay.textContent = `${currentTime} / ${duration}`;
       }
       
       // 格式化时间
@@ -900,6 +868,7 @@
       function showError(message) {
         loader.style.display = 'none';
         bufferingTip.style.display = 'none';
+        urlProcessing.style.display = 'none';
         if (countdownTimer) clearInterval(countdownTimer);
         errorMessage.textContent = message;
         errorMessage.style.display = 'block';
