@@ -471,6 +471,7 @@
       let countdownValue = 3;
       let isVideoLoaded = false;
       let currentVideoUrl = '';
+      let useIframeMode = false;
       
       // 获取URL参数
       const urlParams = new URLSearchParams(window.location.search);
@@ -505,95 +506,87 @@
         startLinkDetection(videoUrl);
       });
       
-      // 链接检测函数
+      // 链接检测函数 - 专门处理重定向
       function startLinkDetection(url) {
         linkChecking.style.display = 'block';
         loader.style.display = 'none';
         
         console.log('开始检测链接:', url);
         
-        // 方法1: 使用iframe获取重定向地址
-        getRedirectUrlWithIframe(url)
-          .then(finalUrl => {
-            console.log('获取到最终视频地址:', finalUrl);
-            currentVideoUrl = finalUrl;
-            linkChecking.style.display = 'none';
-            loader.style.display = 'block';
-            bufferingTip.style.display = 'block';
-            
-            // 设置视频源并开始预加载 - 强制使用自定义播放器
-            videoElement.src = finalUrl;
-            videoElement.preload = "auto";
-            
-            // 开始缓冲视频
-            videoElement.load();
-            
-            // 开始倒计时
-            startCountdown();
-          })
-          .catch(error => {
-            console.log('获取重定向地址失败:', error);
-            // 尝试直接使用原始URL
-            console.log('尝试直接使用原始URL');
-            currentVideoUrl = url;
-            linkChecking.style.display = 'none';
-            loader.style.display = 'block';
-            bufferingTip.style.display = 'block';
-            
-            videoElement.src = url;
-            videoElement.preload = "auto";
-            videoElement.load();
-            
-            // 开始倒计时
-            startCountdown();
-          });
+        // 判断是否为API链接（需要获取重定向）
+        if (url.includes('api.camin.cn') || url.includes('/public/video/path/')) {
+          console.log('检测到API链接，需要获取重定向地址');
+          getRedirectUrl(url)
+            .then(finalUrl => {
+              console.log('获取到重定向后的视频地址:', finalUrl);
+              currentVideoUrl = finalUrl;
+              startVideoBuffering(finalUrl);
+            })
+            .catch(error => {
+              console.log('获取重定向地址失败:', error);
+              // 如果获取重定向失败，尝试直接使用原始URL
+              console.log('尝试直接使用原始URL');
+              currentVideoUrl = url;
+              startVideoBuffering(url);
+            });
+        } else {
+          // 直接是视频链接，直接使用
+          console.log('检测到直接视频链接');
+          currentVideoUrl = url;
+          startVideoBuffering(url);
+        }
       }
       
-      // 使用iframe获取重定向地址
-      function getRedirectUrlWithIframe(url) {
+      // 获取重定向地址
+      function getRedirectUrl(url) {
         return new Promise((resolve, reject) => {
-          // 创建一个隐藏的iframe
-          const iframe = document.createElement('iframe');
-          iframe.style.display = 'none';
-          iframe.src = url;
-          
-          // 设置超时
-          const timeout = setTimeout(() => {
-            document.body.removeChild(iframe);
-            reject(new Error('获取重定向地址超时'));
-          }, 10000);
-          
-          iframe.onload = function() {
-            clearTimeout(timeout);
-            try {
-              // 尝试获取iframe的内容URL
-              const iframeUrl = iframe.contentWindow.location.href;
-              document.body.removeChild(iframe);
-              
-              // 如果iframe的URL与原始URL不同，说明发生了重定向
-              if (iframeUrl !== url) {
-                console.log('检测到重定向:', iframeUrl);
-                resolve(iframeUrl);
-              } else {
-                // 没有重定向，使用原始URL
-                resolve(url);
-              }
-            } catch (e) {
-              // 跨域限制，无法获取iframe的URL
-              console.log('跨域限制，无法获取重定向地址:', e);
-              document.body.removeChild(iframe);
-              resolve(url); // 直接使用原始URL
+          // 使用fetch获取重定向地址
+          fetch(url, {
+            method: 'HEAD',
+            redirect: 'follow'
+          })
+          .then(response => {
+            // 获取最终重定向的URL
+            const finalUrl = response.url;
+            console.log('重定向地址:', finalUrl);
+            
+            // 检查是否是有效的视频文件
+            if (isVideoFile(finalUrl)) {
+              resolve(finalUrl);
+            } else {
+              // 如果不是视频文件，可能是再次重定向，需要进一步处理
+              console.log('重定向结果不是视频文件，可能需要进一步处理');
+              reject(new Error('重定向结果不是视频文件'));
             }
-          };
-          
-          iframe.onerror = function() {
-            clearTimeout(timeout);
-            document.body.removeChild(iframe);
-            reject(new Error('iframe加载错误'));
-          };
-          
-          document.body.appendChild(iframe);
+          })
+          .catch(error => {
+            console.log('Fetch请求失败:', error);
+            reject(error);
+          });
         });
+      }
+      
+      // 检查URL是否是视频文件
+      function isVideoFile(url) {
+        const videoExtensions = ['.mp4', '.m3u8', '.webm', '.ogg', '.mov', '.avi', '.mkv'];
+        return videoExtensions.some(ext => url.toLowerCase().includes(ext));
+      }
+      
+      // 开始视频缓冲
+      function startVideoBuffering(url) {
+        linkChecking.style.display = 'none';
+        loader.style.display = 'block';
+        bufferingTip.style.display = 'block';
+        
+        // 设置视频源并开始预加载
+        videoElement.src = url;
+        videoElement.preload = "auto";
+        
+        // 开始缓冲视频
+        videoElement.load();
+        
+        // 开始倒计时
+        startCountdown();
       }
       
       // 监听视频加载进度
@@ -651,7 +644,7 @@
       
       // 暂停按钮事件
       pauseButton.addEventListener('click', function() {
-        pauseVideo();
+        playVideo();
       });
       
       // 点击区域事件 - 点击屏幕暂停/播放
@@ -722,10 +715,12 @@
         updateProgress();
       });
       
+      // 修改错误处理 - 强制使用自定义播放器，不切换到iframe
       videoElement.addEventListener('error', function() {
         console.log('视频元素播放失败，错误信息:', videoElement.error);
-        // 显示错误信息，但不切换到iframe模式
-        showError('视频加载失败，请检查链接是否有效');
+        
+        // 显示错误信息但不切换到iframe
+        showError('视频加载遇到问题，请稍后重试或检查网络连接');
       });
       
       // 双击切换全屏
@@ -758,8 +753,7 @@
             })
             .catch(error => {
               console.log('播放失败，错误信息:', error);
-              // 显示错误信息，但不切换到iframe模式
-              showError('播放失败: ' + error.message);
+              showError('播放失败: ' + error.message + '。请稍后重试。');
             });
         } else {
           pauseVideo();
