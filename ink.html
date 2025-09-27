@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>百草珍酿学习课</title>
+  <title>百草珍酿学习2课</title>
   <style>
     * {
       margin: 0;
@@ -454,29 +454,71 @@
         return;
       }
       
-      // 设置视频源并开始预加载
-      videoElement.src = videoUrl;
-      videoElement.preload = "auto"; // 确保视频预加载
+      // 检查是否需要处理跳转地址
+      if (videoUrl.includes("https://api.camin.cn/public/video/")) {
+        // 处理需要跳转的地址
+        handleRedirectUrl(videoUrl);
+      } else {
+        // 直接设置视频源
+        setVideoSource(videoUrl);
+      }
       
-      // 开始缓冲视频
-      videoElement.load();
+      // 处理跳转地址的函数
+      function handleRedirectUrl(url) {
+        // 显示加载状态
+        bufferingTip.querySelector('.buffering-title').textContent = '正在解析视频地址...';
+        
+        // 使用fetch API获取重定向后的地址
+        fetch(url, {
+          method: 'HEAD', // 使用HEAD方法避免下载整个文件
+          redirect: 'follow'
+        })
+        .then(response => {
+          if (response.ok) {
+            // 获取最终URL
+            const finalUrl = response.url;
+            console.log('重定向后的地址:', finalUrl);
+            
+            // 设置视频源
+            setVideoSource(finalUrl);
+          } else {
+            throw new Error('无法获取视频地址');
+          }
+        })
+        .catch(error => {
+          console.error('解析视频地址失败:', error);
+          
+          // 尝试直接使用原始URL作为备选方案
+          console.log('尝试直接使用原始URL');
+          setVideoSource(url);
+        });
+      }
       
-      // 监听视频加载进度
-      videoElement.addEventListener('progress', function() {
-        // 检查视频是否已经有足够的数据可以播放
-        if (videoElement.buffered.length > 0 && videoElement.buffered.end(0) > 5) {
+      // 设置视频源的函数
+      function setVideoSource(url) {
+        videoElement.src = url;
+        videoElement.preload = "auto"; // 确保视频预加载
+        
+        // 开始缓冲视频
+        videoElement.load();
+        
+        // 监听视频加载进度
+        videoElement.addEventListener('progress', function() {
+          // 检查视频是否已经有足够的数据可以播放
+          if (videoElement.buffered.length > 0 && videoElement.buffered.end(0) > 5) {
+            isVideoLoaded = true;
+          }
+        });
+        
+        // 监听视频可以播放事件
+        videoElement.addEventListener('canplay', function() {
           isVideoLoaded = true;
-        }
-      });
-      
-      // 监听视频可以播放事件
-      videoElement.addEventListener('canplay', function() {
-        isVideoLoaded = true;
-        console.log('视频已加载，可以播放');
-      });
-      
-      // 开始倒计时
-      startCountdown();
+          console.log('视频已加载，可以播放');
+        });
+        
+        // 开始倒计时
+        startCountdown();
+      }
       
       // 倒计时函数
       function startCountdown() {
@@ -751,4 +793,3 @@
   </script>
 </body>
 </html>
-
