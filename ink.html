@@ -521,7 +521,7 @@
             loader.style.display = 'block';
             bufferingTip.style.display = 'block';
             
-            // 设置视频源并开始预加载
+            // 设置视频源并开始预加载 - 使用我们自定义的播放器
             videoElement.src = finalUrl;
             videoElement.preload = "auto";
             
@@ -610,7 +610,6 @@
             .then(response => response.json())
             .then(data => {
               // 解析响应，获取最终URL
-              // 这里需要根据实际响应格式调整
               console.log('代理响应:', data);
               
               // 如果代理返回了最终URL，使用它
@@ -756,9 +755,15 @@
       });
       
       videoElement.addEventListener('error', function() {
-        // 尝试使用iframe方式播放
-        console.log('视频元素播放失败，尝试iframe方式');
-        tryIframePlayback(currentVideoUrl);
+        console.log('视频元素播放失败，错误信息:', videoElement.error);
+        // 只有在视频元素确实无法播放时才使用iframe方式
+        if (videoElement.error && videoElement.error.code === 4) {
+          console.log('视频格式不支持，尝试iframe方式');
+          tryIframePlayback(currentVideoUrl);
+        } else {
+          // 其他错误，显示错误信息
+          showError('视频加载失败，请检查链接是否有效');
+        }
       });
       
       // 双击切换全屏
@@ -790,8 +795,14 @@
               startProgressUpdate();
             })
             .catch(error => {
-              console.log('播放失败，尝试iframe方式:', error);
-              tryIframePlayback(currentVideoUrl);
+              console.log('播放失败，错误信息:', error);
+              // 只有在特定错误时才使用iframe方式
+              if (error.name === 'NotSupportedError' || error.name === 'MediaError') {
+                console.log('视频格式不支持，尝试iframe方式');
+                tryIframePlayback(currentVideoUrl);
+              } else {
+                showError('播放失败: ' + error.message);
+              }
             });
         } else {
           pauseVideo();
@@ -916,7 +927,7 @@
         console.error(message);
       }
       
-      // 尝试使用iframe播放（兼容V1.0方式）
+      // 尝试使用iframe播放（仅在视频元素无法播放时使用）
       function tryIframePlayback(url) {
         console.log('尝试iframe播放:', url);
         
