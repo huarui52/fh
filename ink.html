@@ -94,7 +94,7 @@
       100% { transform: translate(-50%, -50%) rotate(360deg); }
     }
     
-    /* 缓冲提示 - 调整位置 */
+    /* 缓冲提示 */
     .buffering-tip {
       position: fixed;
       top: 25%;
@@ -132,10 +132,10 @@
       margin-top: 10px;
     }
     
-    /* 播放提示 - 继续向上移动 */
+    /* 播放提示 */
     .play-tip {
       position: fixed;
-      top: 25%; /* 继续向上移动 */
+      top: 25%;
       left: 50%;
       transform: translate(-50%, -50%);
       text-align: center;
@@ -156,10 +156,10 @@
       100% { opacity: 0.7; }
     }
     
-    /* 新增提示文字 - 向上移动10% */
+    /* 新增提示文字 */
     .additional-tip {
       position: fixed;
-      bottom: 80px; /* 向上移动10% */
+      bottom: 80px;
       left: 50%;
       transform: translateX(-50%);
       text-align: center;
@@ -193,10 +193,10 @@
       object-fit: contain;
     }
     
-    /* 播放按钮 - 继续向上移动 */
+    /* 播放按钮 */
     .play-button {
       position: fixed;
-      top: 40%; /* 继续向上移动 */
+      top: 40%;
       left: 50%;
       transform: translate(-50%, 0);
       z-index: 99;
@@ -359,13 +359,30 @@
       padding: 20px;
       border-radius: 10px;
     }
+    
+    /* 重试按钮 */
+    .retry-button {
+      position: fixed;
+      top: 60%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      z-index: 201;
+      background: #f74d75;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      padding: 10px 20px;
+      font-size: 16px;
+      cursor: pointer;
+      display: none;
+    }
   </style>
 </head>
 <body>
   <!-- 链接检测提示 -->
   <div class="link-checking" id="linkChecking">
-    <div style="font-size: 24px; margin-bottom: 15px;">正在检测视频链接...</div>
-    <div style="font-size: 16px;">请稍候，正在解析视频地址</div>
+    <div style="font-size: 24px; margin-bottom: 15px;">正在解析视频地址...</div>
+    <div style="font-size: 16px;">请稍候，正在获取真实视频链接</div>
   </div>
   
   <!-- 加载动画 -->
@@ -420,6 +437,9 @@
   
   <!-- 错误提示 -->
   <div class="error-message" id="errorMessage"></div>
+  
+  <!-- 重试按钮 -->
+  <button class="retry-button" id="retryButton">重试播放</button>
 
   <script>
     document.addEventListener('DOMContentLoaded', function() {
@@ -441,6 +461,7 @@
       const progressContainer = document.getElementById('progressContainer');
       const progressBar = document.getElementById('progressBar');
       const timeDisplay = document.getElementById('timeDisplay');
+      const retryButton = document.getElementById('retryButton');
       
       // 播放状态控制
       let isPlaying = false;
@@ -449,6 +470,7 @@
       let countdownTimer = null;
       let countdownValue = 3;
       let isVideoLoaded = false;
+      let currentVideoUrl = '';
       
       // 获取URL参数
       const urlParams = new URLSearchParams(window.location.search);
@@ -476,17 +498,25 @@
       // 开始检测链接
       startLinkDetection(videoUrl);
       
-      // 链接检测函数 - 优化版本
+      // 重试按钮事件
+      retryButton.addEventListener('click', function() {
+        retryButton.style.display = 'none';
+        errorMessage.style.display = 'none';
+        startLinkDetection(videoUrl);
+      });
+      
+      // 链接检测函数 - 使用iframe方法获取重定向地址
       function startLinkDetection(url) {
         linkChecking.style.display = 'block';
         loader.style.display = 'none';
         
         console.log('开始检测链接:', url);
         
-        // 使用更强大的重定向检测
-        detectRedirect(url)
+        // 方法1: 使用iframe获取重定向地址
+        getRedirectUrlWithIframe(url)
           .then(finalUrl => {
-            console.log('最终视频地址:', finalUrl);
+            console.log('获取到最终视频地址:', finalUrl);
+            currentVideoUrl = finalUrl;
             linkChecking.style.display = 'none';
             loader.style.display = 'block';
             bufferingTip.style.display = 'block';
@@ -502,8 +532,10 @@
             startCountdown();
           })
           .catch(error => {
-            console.log('链接检测失败，尝试直接加载:', error);
-            // 即使检测失败也尝试直接加载
+            console.log('获取重定向地址失败:', error);
+            // 尝试直接使用原始URL
+            console.log('尝试直接使用原始URL');
+            currentVideoUrl = url;
             linkChecking.style.display = 'none';
             loader.style.display = 'block';
             bufferingTip.style.display = 'block';
@@ -517,71 +549,83 @@
           });
       }
       
-      // 检测重定向的优化函数
-      function detectRedirect(url) {
+      // 使用iframe获取重定向地址
+      function getRedirectUrlWithIframe(url) {
         return new Promise((resolve, reject) => {
-          // 方法1: 使用XMLHttpRequest检测重定向
-          const xhr = new XMLHttpRequest();
-          xhr.open('GET', url, true);
-          xhr.timeout = 15000;
+          // 创建一个隐藏的iframe
+          const iframe = document.createElement('iframe');
+          iframe.style.display = 'none';
+          iframe.src = url;
           
-          xhr.onreadystatechange = function() {
-            if (xhr.readyState === 4) {
-              if (xhr.status === 200) {
-                // 如果请求成功，检查最终URL
-                const finalUrl = xhr.responseURL || url;
-                console.log('XHR检测到最终URL:', finalUrl);
-                resolve(finalUrl);
+          // 设置超时
+          const timeout = setTimeout(() => {
+            document.body.removeChild(iframe);
+            reject(new Error('获取重定向地址超时'));
+          }, 10000);
+          
+          iframe.onload = function() {
+            clearTimeout(timeout);
+            try {
+              // 尝试获取iframe的内容URL
+              const iframeUrl = iframe.contentWindow.location.href;
+              document.body.removeChild(iframe);
+              
+              // 如果iframe的URL与原始URL不同，说明发生了重定向
+              if (iframeUrl !== url) {
+                console.log('检测到重定向:', iframeUrl);
+                resolve(iframeUrl);
               } else {
-                // 如果状态码不是200，尝试方法2
-                console.log('XHR状态码:', xhr.status);
-                tryFetchWithCORS(url).then(resolve).catch(reject);
+                // 没有重定向，使用原始URL
+                resolve(url);
               }
+            } catch (e) {
+              // 跨域限制，无法获取iframe的URL
+              console.log('跨域限制，无法获取重定向地址:', e);
+              document.body.removeChild(iframe);
+              
+              // 尝试使用服务端代理
+              getRedirectUrlWithProxy(url)
+                .then(resolve)
+                .catch(reject);
             }
           };
           
-          xhr.onerror = function() {
-            console.log('XHR请求出错，尝试其他方法');
-            tryFetchWithCORS(url).then(resolve).catch(reject);
+          iframe.onerror = function() {
+            clearTimeout(timeout);
+            document.body.removeChild(iframe);
+            reject(new Error('iframe加载错误'));
           };
           
-          xhr.ontimeout = function() {
-            console.log('XHR请求超时，尝试其他方法');
-            tryFetchWithCORS(url).then(resolve).catch(reject);
-          };
-          
-          try {
-            xhr.send();
-          } catch (e) {
-            console.log('XHR异常:', e);
-            tryFetchWithCORS(url).then(resolve).catch(reject);
-          }
+          document.body.appendChild(iframe);
         });
       }
       
-      // 使用Fetch API和CORS代理检测重定向
-      function tryFetchWithCORS(url) {
+      // 使用服务端代理获取重定向地址
+      function getRedirectUrlWithProxy(url) {
         return new Promise((resolve, reject) => {
-          // 尝试使用CORS代理
-          const proxyUrl = 'https://cors-anywhere.herokuapp.com/' + url;
+          // 这里可以使用免费的CORS代理服务
+          const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(url)}`;
           
-          fetch(proxyUrl, {
-            method: 'HEAD',
-            redirect: 'follow'
-          })
-          .then(response => {
-            // 获取最终URL
-            const finalUrl = response.url.replace('https://cors-anywhere.herokuapp.com/', '');
-            console.log('CORS代理检测到最终URL:', finalUrl);
-            resolve(finalUrl);
-          })
-          .catch(error => {
-            console.log('CORS代理失败:', error);
-            
-            // 最后尝试：直接假设URL是有效的，让浏览器处理重定向
-            console.log('使用原始URL，让浏览器处理重定向');
-            resolve(url);
-          });
+          fetch(proxyUrl)
+            .then(response => response.json())
+            .then(data => {
+              // 解析响应，获取最终URL
+              // 这里需要根据实际响应格式调整
+              console.log('代理响应:', data);
+              
+              // 如果代理返回了最终URL，使用它
+              if (data.url) {
+                resolve(data.url);
+              } else {
+                // 否则使用原始URL
+                resolve(url);
+              }
+            })
+            .catch(error => {
+              console.log('代理请求失败:', error);
+              // 代理失败，使用原始URL
+              resolve(url);
+            });
         });
       }
       
@@ -714,7 +758,7 @@
       videoElement.addEventListener('error', function() {
         // 尝试使用iframe方式播放
         console.log('视频元素播放失败，尝试iframe方式');
-        tryIframePlayback(videoUrl);
+        tryIframePlayback(currentVideoUrl);
       });
       
       // 双击切换全屏
@@ -747,7 +791,7 @@
             })
             .catch(error => {
               console.log('播放失败，尝试iframe方式:', error);
-              tryIframePlayback(videoUrl);
+              tryIframePlayback(currentVideoUrl);
             });
         } else {
           pauseVideo();
@@ -868,6 +912,7 @@
         if (countdownTimer) clearInterval(countdownTimer);
         errorMessage.textContent = message;
         errorMessage.style.display = 'block';
+        retryButton.style.display = 'block';
         console.error(message);
       }
       
@@ -886,6 +931,8 @@
         pauseButton.style.display = 'none';
         fullscreenButton.style.display = 'none';
         clickArea.style.display = 'none';
+        errorMessage.style.display = 'none';
+        retryButton.style.display = 'none';
         
         // 创建iframe
         const iframe = document.createElement('iframe');
