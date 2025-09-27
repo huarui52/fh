@@ -276,6 +276,23 @@
       text-align: center;
       z-index: 200;
       display: none;
+      max-width: 80%;
+    }
+    
+    .retry-button {
+      background: #f74d75;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 5px;
+      font-size: 16px;
+      cursor: pointer;
+      margin-top: 15px;
+      transition: background 0.3s;
+    }
+    
+    .retry-button:hover {
+      background: #e03a5e;
     }
     
     /* 视频封面 */
@@ -370,7 +387,7 @@
   <div class="buffering-tip" id="bufferingTip">
     <div class="buffering-title">百草珍酿 节目缓冲中</div>
     <div class="buffering-subtitle">正在解析视频地址，请稍候...</div>
-    <div class="countdown" id="countdown">5秒</div>
+    <div class="countdown" id="countdown">8秒</div>
   </div>
   
   <!-- 播放提示 -->
@@ -410,7 +427,10 @@
   <button class="fullscreen-button" id="fullscreenButton">全屏播放</button>
   
   <!-- 错误提示 -->
-  <div class="error-message" id="errorMessage"></div>
+  <div class="error-message" id="errorMessage">
+    <div id="errorText"></div>
+    <button class="retry-button" id="retryButton">重试播放</button>
+  </div>
 
   <script>
     document.addEventListener('DOMContentLoaded', function() {
@@ -428,6 +448,8 @@
       const pauseButton = document.getElementById('pauseButton');
       const fullscreenButton = document.getElementById('fullscreenButton');
       const errorMessage = document.getElementById('errorMessage');
+      const errorText = document.getElementById('errorText');
+      const retryButton = document.getElementById('retryButton');
       const progressContainer = document.getElementById('progressContainer');
       const progressBar = document.getElementById('progressBar');
       const timeDisplay = document.getElementById('timeDisplay');
@@ -437,9 +459,10 @@
       let progressTimer = null;
       let hideControlsTimer = null;
       let countdownTimer = null;
-      let countdownValue = 5; // 解析地址阶段倒计时延长至5秒
+      let countdownValue = 8; // 延长倒计时时间
       let isVideoLoaded = false;
       let finalVideoUrl = ''; // 存储最终解析后的视频地址
+      let originalUrl = '';   // 原始地址
       
       // 初始化：显示缓冲提示
       bufferingTip.style.display = 'block';
@@ -454,7 +477,6 @@
       }
       
       // 解码URL
-      let originalUrl;
       try {
         originalUrl = atob(encodedParam);
       } catch (e) {
@@ -467,49 +489,81 @@
         return;
       }
       
-      // 核心功能：解析可能存在跳转的视频地址
-      resolveVideoUrl(originalUrl)
-        .then(resolvedUrl => {
-          finalVideoUrl = resolvedUrl;
-          console.log('解析完成，最终视频地址:', finalVideoUrl);
-          
-          // 设置视频源并开始预加载
-          videoElement.src = finalVideoUrl;
-          videoElement.preload = "auto";
-          videoElement.load();
-          
-          // 监听视频加载进度
-          videoElement.addEventListener('progress', function() {
-            if (videoElement.buffered.length > 0 && videoElement.buffered.end(0) > 5) {
-              isVideoLoaded = true;
+      // 重试按钮事件
+      retryButton.addEventListener('click', function() {
+        errorMessage.style.display = 'none';
+        loader.style.display = 'block';
+        bufferingTip.style.display = 'block';
+        countdownValue = 8;
+        initializePlayer();
+      });
+      
+      // 初始化播放器
+      initializePlayer();
+      
+      // 初始化播放器函数
+      function initializePlayer() {
+        // 解析视频地址
+        resolveVideoUrl(originalUrl)
+          .then(resolvedUrl => {
+            finalVideoUrl = resolvedUrl;
+            console.log('解析完成，最终视频地址:', finalVideoUrl);
+            
+            // 重置视频元素
+            videoElement.src = '';
+            videoElement.load();
+            
+            // 设置视频源并开始预加载
+            videoElement.src = finalVideoUrl;
+            videoElement.preload = "auto";
+            videoElement.load();
+            
+            // 监听视频加载进度
+            videoElement.addEventListener('progress', handleVideoProgress);
+            
+            // 监听视频可以播放事件
+            videoElement.addEventListener('canplay', handleVideoCanPlay);
+            
+            // 开始倒计时
+            startCountdown();
+          })
+          .catch(error => {
+            console.error('解析视频地址失败:', error);
+            // 解析失败时尝试直接使用原始地址
+            try {
+              videoElement.src = '';
+              videoElement.load();
+              videoElement.src = originalUrl;
+              videoElement.load();
+              finalVideoUrl = originalUrl;
+              startCountdown();
+            } catch (e) {
+              showError('视频地址解析失败: ' + error.message);
             }
           });
-          
-          // 监听视频可以播放事件
-          videoElement.addEventListener('canplay', function() {
-            isVideoLoaded = true;
-            console.log('视频已加载，可以播放');
-          });
-          
-          // 开始倒计时
-          startCountdown();
-        })
-        .catch(error => {
-          console.error('解析视频地址失败:', error);
-          // 解析失败时尝试直接使用原始地址
-          try {
-            videoElement.src = originalUrl;
-            videoElement.load();
-            finalVideoUrl = originalUrl;
-            startCountdown();
-          } catch (e) {
-            showError('视频地址解析失败: ' + error.message);
-          }
-        });
+      }
+      
+      // 视频进度处理函数
+      function handleVideoProgress() {
+        if (videoElement.buffered.length > 0 && videoElement.buffered.end(0) > 5) {
+          isVideoLoaded = true;
+        }
+      }
+      
+      // 视频可播放处理函数
+      function handleVideoCanPlay() {
+        isVideoLoaded = true;
+        console.log('视频已加载，可以播放');
+      }
       
       // 解析视频地址的函数（处理跳转）
       function resolveVideoUrl(url) {
         return new Promise((resolve, reject) => {
+          // 设置8秒超时
+          const timeoutId = setTimeout(() => {
+            reject(new Error('链接解析超时'));
+          }, 8000);
+          
           // 对于已知的跳转域名，使用HEAD请求获取最终地址
           if (url.includes('api.camin.cn')) {
             const xhr = new XMLHttpRequest();
@@ -517,10 +571,16 @@
             xhr.followRedirects = false; // 不自动跟随跳转
             
             xhr.onload = function() {
+              clearTimeout(timeoutId);
               if (xhr.status >= 300 && xhr.status < 400) {
                 // 获取重定向地址
-                const redirectUrl = xhr.getResponseHeader('Location');
+                let redirectUrl = xhr.getResponseHeader('Location');
                 if (redirectUrl) {
+                  // 处理相对路径的情况
+                  if (!redirectUrl.startsWith('http')) {
+                    const baseUrl = url.split('/').slice(0, 3).join('/');
+                    redirectUrl = baseUrl + redirectUrl;
+                  }
                   resolve(redirectUrl);
                 } else {
                   reject(new Error('未找到跳转地址'));
@@ -532,6 +592,7 @@
             };
             
             xhr.onerror = function() {
+              clearTimeout(timeoutId);
               reject(new Error('请求失败'));
             };
             
@@ -539,10 +600,12 @@
           } 
           // 对于MP4直接链接，不进行解析
           else if (url.toLowerCase().endsWith('.mp4')) {
+            clearTimeout(timeoutId);
             resolve(url);
           }
           // 其他情况尝试直接使用
           else {
+            clearTimeout(timeoutId);
             resolve(url);
           }
         });
@@ -568,17 +631,17 @@
       function finishBuffering() {
         loader.style.display = 'none';
         bufferingTip.style.display = 'none';
+        
+        // 如果视频还未加载完成，显示额外提示
+        if (!isVideoLoaded) {
+          playTip.textContent = '视频仍在加载中，请稍后点击播放';
+        }
+        
         playTip.style.display = 'block';
         additionalTip.style.display = 'block';
         playButton.style.display = 'flex';
         fullscreenButton.style.display = 'block';
         clickArea.style.display = 'block';
-        
-        if (isVideoLoaded) {
-          console.log('视频已预加载完成，点击即可播放');
-        } else {
-          console.log('视频仍在加载中...');
-        }
       }
       
       // 播放按钮事件
@@ -659,6 +722,7 @@
         updateProgress();
       });
       
+      // 视频加载错误处理
       videoElement.addEventListener('error', function() {
         let errorMsg = '视频加载失败';
         switch(videoElement.error.code) {
@@ -667,17 +731,41 @@
           case 3: errorMsg += ' - 视频解码失败'; break;
           case 4: errorMsg += ' - 视频无法加载'; break;
         }
-        showError(errorMsg + '，尝试使用原始地址播放');
         
-        // 尝试使用原始地址重新加载
+        // 如果当前使用的是解析后的地址，尝试原始地址
         if (finalVideoUrl !== originalUrl) {
-          try {
-            videoElement.src = originalUrl;
-            videoElement.load();
-            finalVideoUrl = originalUrl;
-          } catch (e) {
-            console.error('尝试原始地址播放失败:', e);
-          }
+          errorMsg += '，正在尝试使用原始地址播放...';
+          showError(errorMsg);
+          
+          // 2秒后自动尝试原始地址
+          setTimeout(() => {
+            try {
+              videoElement.src = '';
+              videoElement.load();
+              videoElement.src = originalUrl;
+              videoElement.load();
+              finalVideoUrl = originalUrl;
+              
+              // 隐藏错误信息，显示加载状态
+              errorMessage.style.display = 'none';
+              loader.style.display = 'block';
+              
+              // 5秒后检查是否可以播放
+              setTimeout(() => {
+                if (videoElement.paused && !isVideoLoaded) {
+                  showError('尝试原始地址播放也失败，请点击重试按钮');
+                } else {
+                  loader.style.display = 'none';
+                  playVideo();
+                }
+              }, 5000);
+            } catch (e) {
+              showError('尝试原始地址播放失败: ' + e.message);
+            }
+          }, 2000);
+        } else {
+          errorMsg += '，请点击重试按钮';
+          showError(errorMsg);
         }
       });
       
@@ -828,7 +916,7 @@
         loader.style.display = 'none';
         bufferingTip.style.display = 'none';
         if (countdownTimer) clearInterval(countdownTimer);
-        errorMessage.textContent = message;
+        errorText.textContent = message;
         errorMessage.style.display = 'block';
         console.error(message);
       }
