@@ -134,6 +134,13 @@
       margin-top: 10px;
     }
     
+    /* 解析进度提示 */
+    .解析进度 {
+      font-size: 18px;
+      margin-top: 10px;
+      color: #ffffff;
+    }
+    
     /* 播放提示 */
     .play-tip {
       position: fixed;
@@ -387,7 +394,8 @@
   <div class="buffering-tip" id="bufferingTip">
     <div class="buffering-title">百草珍酿 节目缓冲中</div>
     <div class="buffering-subtitle">正在解析视频地址，请稍候...</div>
-    <div class="countdown" id="countdown">8秒</div>
+    <div class="解析进度" id="解析进度">正在请求API接口...</div>
+    <div class="countdown" id="countdown">10秒</div>
   </div>
   
   <!-- 播放提示 -->
@@ -437,6 +445,7 @@
       // DOM元素获取
       const loader = document.querySelector('.loader');
       const bufferingTip = document.getElementById('bufferingTip');
+      const 解析进度 = document.getElementById('解析进度');
       const countdown = document.getElementById('countdown');
       const playTip = document.getElementById('playTip');
       const additionalTip = document.getElementById('additionalTip');
@@ -459,7 +468,7 @@
       let progressTimer = null;
       let hideControlsTimer = null;
       let countdownTimer = null;
-      let countdownValue = 8; // 延长倒计时时间
+      let countdownValue = 10; // 延长倒计时时间，给API解析足够时间
       let isVideoLoaded = false;
       let finalVideoUrl = ''; // 存储最终解析后的视频地址
       let originalUrl = '';   // 原始地址
@@ -494,7 +503,8 @@
         errorMessage.style.display = 'none';
         loader.style.display = 'block';
         bufferingTip.style.display = 'block';
-        countdownValue = 8;
+        countdownValue = 10;
+        解析进度.textContent = '正在请求API接口...';
         initializePlayer();
       });
       
@@ -503,11 +513,12 @@
       
       // 初始化播放器函数
       function initializePlayer() {
-        // 解析视频地址
-        resolveVideoUrl(originalUrl)
+        // 解析视频地址（处理API接口返回的重定向）
+        resolveApiVideoUrl(originalUrl)
           .then(resolvedUrl => {
             finalVideoUrl = resolvedUrl;
-            console.log('解析完成，最终视频地址:', finalVideoUrl);
+            console.log('API解析完成，最终视频地址:', finalVideoUrl);
+            解析进度.textContent = 'API解析完成，正在加载视频...';
             
             // 重置视频元素
             videoElement.src = '';
@@ -528,18 +539,8 @@
             startCountdown();
           })
           .catch(error => {
-            console.error('解析视频地址失败:', error);
-            // 解析失败时尝试直接使用原始地址
-            try {
-              videoElement.src = '';
-              videoElement.load();
-              videoElement.src = originalUrl;
-              videoElement.load();
-              finalVideoUrl = originalUrl;
-              startCountdown();
-            } catch (e) {
-              showError('视频地址解析失败: ' + error.message);
-            }
+            console.error('API解析视频地址失败:', error);
+            showError(`API解析失败: ${error.message}，请点击重试`);
           });
       }
       
@@ -547,67 +548,114 @@
       function handleVideoProgress() {
         if (videoElement.buffered.length > 0 && videoElement.buffered.end(0) > 5) {
           isVideoLoaded = true;
+          解析进度.textContent = '视频加载完成，准备播放';
         }
       }
       
       // 视频可播放处理函数
       function handleVideoCanPlay() {
         isVideoLoaded = true;
+        解析进度.textContent = '视频准备就绪';
         console.log('视频已加载，可以播放');
       }
       
-      // 解析视频地址的函数（处理跳转）
-      function resolveVideoUrl(url) {
+      // 解析API视频地址的函数（专门处理API接口返回的重定向）
+      function resolveApiVideoUrl(url) {
         return new Promise((resolve, reject) => {
-          // 设置8秒超时
+          // 设置10秒超时
           const timeoutId = setTimeout(() => {
-            reject(new Error('链接解析超时'));
-          }, 8000);
+            reject(new Error('API请求超时'));
+          }, 10000);
           
-          // 对于已知的跳转域名，使用HEAD请求获取最终地址
-          if (url.includes('api.camin.cn')) {
-            const xhr = new XMLHttpRequest();
-            xhr.open('HEAD', url, true);
-            xhr.followRedirects = false; // 不自动跟随跳转
+          // 创建CORS请求，处理API接口
+          const xhr = new XMLHttpRequest();
+          xhr.open('GET', url, true);
+          xhr.followRedirects = false; // 不自动跟随跳转，手动处理重定向
+          
+          // 设置请求头，模拟浏览器行为，避免被API拒绝
+          xhr.setRequestHeader('User-Agent', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36');
+          xhr.setRequestHeader('Accept', 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8');
+          xhr.setRequestHeader('Accept-Language', 'zh-CN,zh;q=0.8,en-US;q=0.5,en;q=0.3');
+          xhr.setRequestHeader('Connection', 'keep-alive');
+          
+          xhr.onload = function() {
+            clearTimeout(timeoutId);
             
-            xhr.onload = function() {
-              clearTimeout(timeoutId);
-              if (xhr.status >= 300 && xhr.status < 400) {
-                // 获取重定向地址
-                let redirectUrl = xhr.getResponseHeader('Location');
-                if (redirectUrl) {
-                  // 处理相对路径的情况
-                  if (!redirectUrl.startsWith('http')) {
-                    const baseUrl = url.split('/').slice(0, 3).join('/');
-                    redirectUrl = baseUrl + redirectUrl;
-                  }
+            // 更新解析进度显示
+            解析进度.textContent = `收到响应 (状态码: ${xhr.status})`;
+            
+            // 处理重定向响应 (3xx状态码)
+            if (xhr.status >= 300 && xhr.status < 400) {
+              let redirectUrl = xhr.getResponseHeader('Location');
+              if (redirectUrl) {
+                // 处理相对路径的情况
+                if (!redirectUrl.startsWith('http')) {
+                  const baseUrl = url.split('/').slice(0, 3).join('/');
+                  redirectUrl = new URL(redirectUrl, baseUrl).href;
+                }
+                解析进度.textContent = `发现重定向地址: ${redirectUrl.split('/')[2]}`;
+                
+                // 检查是否是直接视频地址
+                if (redirectUrl.toLowerCase().endsWith('.mp4') || 
+                    redirectUrl.toLowerCase().endsWith('.mov') ||
+                    redirectUrl.toLowerCase().endsWith('.webm')) {
                   resolve(redirectUrl);
                 } else {
-                  reject(new Error('未找到跳转地址'));
+                  // 如果仍不是视频地址，可能需要再次请求
+                  解析进度.textContent = '重定向地址不是直接视频，再次请求...';
+                  setTimeout(() => {
+                    resolveApiVideoUrl(redirectUrl).then(resolve).catch(reject);
+                  }, 500);
                 }
               } else {
-                // 非跳转状态码，直接使用原地址
+                reject(new Error('未找到重定向地址'));
+              }
+            } 
+            // 处理200 OK响应 - 可能API直接返回视频URL
+            else if (xhr.status === 200) {
+              try {
+                // 尝试解析JSON响应
+                const response = JSON.parse(xhr.responseText);
+                解析进度.textContent = '解析JSON响应...';
+                
+                // 常见的视频URL字段名
+                const urlFields = ['url', 'video_url', 'videoUrl', 'source', 'src', 'link'];
+                
+                for (const field of urlFields) {
+                  if (response[field] && response[field].includes('http')) {
+                    resolve(response[field]);
+                    return;
+                  }
+                }
+                
+                // 如果JSON中没有找到，检查响应文本是否直接是URL
+                if (xhr.responseText.includes('http') && 
+                    (xhr.responseText.includes('.mp4') || 
+                     xhr.responseText.includes('.mov') ||
+                     xhr.responseText.includes('.webm'))) {
+                  resolve(xhr.responseText.trim());
+                  return;
+                }
+                
+                // 如果都不是，可能响应本身就是视频内容
+                resolve(url);
+              } catch (e) {
+                // 不是JSON响应，可能是HTML或其他格式
+                解析进度.textContent = '响应不是JSON，尝试直接使用...';
                 resolve(url);
               }
-            };
-            
-            xhr.onerror = function() {
-              clearTimeout(timeoutId);
-              reject(new Error('请求失败'));
-            };
-            
-            xhr.send();
-          } 
-          // 对于MP4直接链接，不进行解析
-          else if (url.toLowerCase().endsWith('.mp4')) {
+            } else {
+              // 其他状态码
+              reject(new Error(`API请求失败，状态码: ${xhr.status}`));
+            }
+          };
+          
+          xhr.onerror = function() {
             clearTimeout(timeoutId);
-            resolve(url);
-          }
-          // 其他情况尝试直接使用
-          else {
-            clearTimeout(timeoutId);
-            resolve(url);
-          }
+            reject(new Error('API请求发生网络错误'));
+          };
+          
+          xhr.send();
         });
       }
       
@@ -732,41 +780,7 @@
           case 4: errorMsg += ' - 视频无法加载'; break;
         }
         
-        // 如果当前使用的是解析后的地址，尝试原始地址
-        if (finalVideoUrl !== originalUrl) {
-          errorMsg += '，正在尝试使用原始地址播放...';
-          showError(errorMsg);
-          
-          // 2秒后自动尝试原始地址
-          setTimeout(() => {
-            try {
-              videoElement.src = '';
-              videoElement.load();
-              videoElement.src = originalUrl;
-              videoElement.load();
-              finalVideoUrl = originalUrl;
-              
-              // 隐藏错误信息，显示加载状态
-              errorMessage.style.display = 'none';
-              loader.style.display = 'block';
-              
-              // 5秒后检查是否可以播放
-              setTimeout(() => {
-                if (videoElement.paused && !isVideoLoaded) {
-                  showError('尝试原始地址播放也失败，请点击重试按钮');
-                } else {
-                  loader.style.display = 'none';
-                  playVideo();
-                }
-              }, 5000);
-            } catch (e) {
-              showError('尝试原始地址播放失败: ' + e.message);
-            }
-          }, 2000);
-        } else {
-          errorMsg += '，请点击重试按钮';
-          showError(errorMsg);
-        }
+        showError(errorMsg + '，请点击重试按钮');
       });
       
       // 双击切换全屏
@@ -921,7 +935,7 @@
         console.error(message);
       }
       
-      console.log('初始视频URL:', originalUrl);
+      console.log('初始API/视频URL:', originalUrl);
     });
   </script>
 </body>
