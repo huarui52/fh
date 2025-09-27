@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>百草珍酿学习课 V3.8</title>
+  <title>百草珍酿学习课 V3.0</title>
   <style>
     * {
       margin: 0;
@@ -471,7 +471,6 @@
       let countdownValue = 3;
       let isVideoLoaded = false;
       let currentVideoUrl = '';
-      let useIframeMode = false; // 新增：标记是否使用iframe模式
       
       // 获取URL参数
       const urlParams = new URLSearchParams(window.location.search);
@@ -513,9 +512,6 @@
         
         console.log('开始检测链接:', url);
         
-        // 重置使用iframe模式标记
-        useIframeMode = false;
-        
         // 方法1: 使用iframe获取重定向地址
         getRedirectUrlWithIframe(url)
           .then(finalUrl => {
@@ -525,7 +521,7 @@
             loader.style.display = 'block';
             bufferingTip.style.display = 'block';
             
-            // 设置视频源并开始预加载 - 使用我们自定义的播放器
+            // 设置视频源并开始预加载 - 强制使用自定义播放器
             videoElement.src = finalUrl;
             videoElement.preload = "auto";
             
@@ -655,7 +651,7 @@
       
       // 暂停按钮事件
       pauseButton.addEventListener('click', function() {
-        playVideo();
+        pauseVideo();
       });
       
       // 点击区域事件 - 点击屏幕暂停/播放
@@ -728,18 +724,8 @@
       
       videoElement.addEventListener('error', function() {
         console.log('视频元素播放失败，错误信息:', videoElement.error);
-        
-        // 只有在特定情况下才使用iframe方式
-        if (videoElement.error && 
-            (videoElement.error.code === 4 || // MEDIA_ERR_SRC_NOT_SUPPORTED
-             videoElement.error.code === 3)) { // MEDIA_ERR_DECODE
-          console.log('视频格式不支持或解码错误，尝试iframe方式');
-          useIframeMode = true;
-          tryIframePlayback(currentVideoUrl);
-        } else {
-          // 其他错误，显示错误信息
-          showError('视频加载失败，请检查链接是否有效');
-        }
+        // 显示错误信息，但不切换到iframe模式
+        showError('视频加载失败，请检查链接是否有效');
       });
       
       // 双击切换全屏
@@ -751,14 +737,8 @@
         return false;
       });
       
-      // 播放视频函数
+      // 播放视频函数 - 强制使用自定义播放器
       function playVideo() {
-        // 如果已经标记为使用iframe模式，直接使用iframe播放
-        if (useIframeMode) {
-          tryIframePlayback(currentVideoUrl);
-          return;
-        }
-        
         if (videoElement.paused) {
           videoElement.play()
             .then(() => {
@@ -778,17 +758,8 @@
             })
             .catch(error => {
               console.log('播放失败，错误信息:', error);
-              // 只有在特定错误时才使用iframe方式
-              if (error.name === 'NotSupportedError' || 
-                  error.name === 'MediaError' ||
-                  error.message.includes('format') ||
-                  error.message.includes('support')) {
-                console.log('视频格式不支持，尝试iframe方式');
-                useIframeMode = true;
-                tryIframePlayback(currentVideoUrl);
-              } else {
-                showError('播放失败: ' + error.message);
-              }
+              // 显示错误信息，但不切换到iframe模式
+              showError('播放失败: ' + error.message);
             });
         } else {
           pauseVideo();
@@ -913,66 +884,8 @@
         console.error(message);
       }
       
-      // 尝试使用iframe播放（仅在视频元素无法播放时使用）
-      function tryIframePlayback(url) {
-        console.log('尝试iframe播放:', url);
-        
-        // 隐藏所有现有元素
-        loader.style.display = 'none';
-        bufferingTip.style.display = 'none';
-        playTip.style.display = 'none';
-        additionalTip.style.display = 'none';
-        customPlayer.style.display = 'none';
-        videoCover.style.display = 'none';
-        playButton.style.display = 'none';
-        pauseButton.style.display = 'none';
-        fullscreenButton.style.display = 'none';
-        clickArea.style.display = 'none';
-        errorMessage.style.display = 'none';
-        retryButton.style.display = 'none';
-        
-        // 创建iframe
-        const iframe = document.createElement('iframe');
-        iframe.style.position = 'fixed';
-        iframe.style.top = '0';
-        iframe.style.left = '0';
-        iframe.style.width = '100%';
-        iframe.style.height = '100%';
-        iframe.style.border = 'none';
-        iframe.style.zIndex = '1000';
-        iframe.setAttribute('allowfullscreen', '');
-        iframe.setAttribute('webkitallowfullscreen', '');
-        iframe.setAttribute('mozallowfullscreen', '');
-        iframe.setAttribute('allow', 'autoplay; fullscreen');
-        iframe.src = url;
-        
-        document.body.appendChild(iframe);
-        
-        // 添加全屏按钮
-        const iframeFullscreenBtn = document.createElement('button');
-        iframeFullscreenBtn.textContent = '全屏播放';
-        iframeFullscreenBtn.className = 'fullscreen-button';
-        iframeFullscreenBtn.style.zIndex = '1001';
-        iframeFullscreenBtn.onclick = function() {
-          if (iframe.requestFullscreen) {
-            iframe.requestFullscreen();
-          } else if (iframe.webkitRequestFullscreen) {
-            iframe.webkitRequestFullscreen();
-          } else if (iframe.mozRequestFullScreen) {
-            iframe.mozRequestFullScreen();
-          } else if (iframe.msRequestFullscreen) {
-            iframe.msRequestFullscreen();
-          }
-        };
-        
-        document.body.appendChild(iframeFullscreenBtn);
-        
-        console.log('已切换到iframe播放模式');
-      }
-      
       console.log('视频URL:', videoUrl);
     });
   </script>
 </body>
 </html>
-
